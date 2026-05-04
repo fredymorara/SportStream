@@ -6,7 +6,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchMatchesByStatus } from '../store/matchesSlice';
 import { fetchMatchStreams, clearStreams } from '../store/streamsSlice';
-import { Stream } from '../services/api';
+import type { Stream } from '../services/api';
 
 const PlayerPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
@@ -21,7 +21,6 @@ const PlayerPage: React.FC = () => {
   }, [rawMatches, matchId]);
 
   useEffect(() => {
-    // If the user navigates directly, fetch baseline data
     if (rawMatches.length === 0) {
       dispatch(fetchMatchesByStatus('all'));
     }
@@ -69,7 +68,6 @@ const PlayerPage: React.FC = () => {
   return (
     <MainLayout>
       <div className="flex flex-col gap-6 select-none">
-        {/* Navigation / Header details */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900/40 p-5 rounded-xl border border-slate-800/80">
           <div>
             <span className="text-xs font-bold uppercase text-brand-accent tracking-wider mb-1 block">
@@ -90,7 +88,6 @@ const PlayerPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Streaming links panel */}
         <StreamSelector
           sources={streamsBySource}
           onStreamSelect={handleStreamSelect}

@@ -4,7 +4,8 @@ import MainLayout from '../layouts/MainLayout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { fetchMatchesByStatus } from '../store/matchesSlice';
-import { api, Stream } from '../services/api';
+import { api } from '../services/api';
+import type { Stream } from '../services/api';
 
 const StreamViewPage: React.FC = () => {
   const { matchId, sourceId, streamId } = useParams<{ matchId: string; sourceId: string; streamId: string }>();

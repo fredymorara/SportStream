@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import FilterBar from './FilterBar';
-import { Sport } from '../services/api';
+import type { Sport } from '../services/api';
 
 interface HeaderProps {
   filterProps?: {

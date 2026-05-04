@@ -1,5 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { api, APIMatch, Stream } from '../services/api';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { api } from '../services/api';
+import type { APIMatch, Stream } from '../services/api';
 
 export const fetchMatchStreams = createAsyncThunk(
   'streams/fetchByMatch',

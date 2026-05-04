@@ -1,5 +1,5 @@
 import React from 'react';
-import { Stream } from '../services/api';
+import type { Stream } from '../services/api';
 
 interface StreamSelectorProps {
   sources: Record<string, Stream[]>;

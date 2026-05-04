@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, APIMatch } from '../services/api';
+import { api } from '../services/api';
+import type { APIMatch } from '../services/api';
 
 interface HeroSectionProps {
   featuredMatch: APIMatch | null;

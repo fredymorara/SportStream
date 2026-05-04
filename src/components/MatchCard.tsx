@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { api, APIMatch } from "../services/api";
+import { api } from "../services/api";
+import type { APIMatch } from "../services/api";
 
 interface MatchCardProps {
   match: APIMatch;
@@ -61,7 +62,6 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
           </div>
         </div>
 
-        {/* Action Button Indicator */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="w-14 h-14 bg-emerald-500/90 rounded-full flex items-center justify-center backdrop-blur-md shadow-xl transform scale-90 group-hover:scale-100 transition-transform duration-300 text-slate-950">
             <svg className="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 20 20">

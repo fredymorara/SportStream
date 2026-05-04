@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sport } from '../services/api';
+import type { Sport } from '../services/api';
 
 interface FilterBarProps {
   sports: Sport[];
@@ -36,7 +36,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
   return (
     <div className="relative">
-      {/* Mobile Menu Toggle */}
       <div className="2xl:hidden flex z-50">
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -52,10 +51,8 @@ const FilterBar: React.FC<FilterBarProps> = ({
         </button>
       </div>
 
-      {/* Navigation Options */}
       <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} 2xl:flex flex-col 2xl:flex-row absolute 2xl:relative right-0 top-full 2xl:top-auto z-50 bg-slate-900 2xl:bg-transparent p-4 2xl:p-0 rounded-xl border border-white/10 2xl:border-none shadow-2xl 2xl:shadow-none items-stretch 2xl:items-center gap-4 text-xs mt-4 2xl:mt-0 min-w-[280px] 2xl:min-w-max`}>
         
-        {/* Category Filter Pills */}
         <div className="flex flex-wrap items-center gap-1.5 bg-slate-800/50 p-1.5 rounded-xl border border-white/5">
           <button
             onClick={() => onSportChange('all')}
@@ -84,7 +81,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
         <div className="h-8 w-px bg-white/10 hidden 2xl:block"></div>
 
-        {/* Live / Upcoming Status Filter */}
         <select
           id="status-filter"
           className="appearance-none bg-slate-800/80 hover:bg-slate-700/80 text-white border border-white/10 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors cursor-pointer"
@@ -99,7 +95,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
         <div className="h-8 w-px bg-white/10 hidden 2xl:block"></div>
 
-        {/* Toggles (HD / Popular) */}
         <div className="flex items-center gap-4 bg-slate-800/50 p-1.5 px-3 rounded-xl border border-white/5 whitespace-nowrap">
           <label className="flex items-center cursor-pointer group">
             <input 
@@ -126,7 +121,6 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
         <div className="h-8 w-px bg-white/10 hidden 2xl:block"></div>
 
-        {/* Sorting Selection */}
         <div className="flex items-center gap-2">
           <select
             id="sort-by"

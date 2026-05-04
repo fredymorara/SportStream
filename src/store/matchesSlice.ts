@@ -1,6 +1,8 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { api, APIMatch } from '../services/api';
-import { RootState } from './index';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import { api } from '../services/api';
+import type { APIMatch } from '../services/api';
+import type { RootState } from './index';
 
 export const fetchMatchesByStatus = createAsyncThunk(
   'matches/fetchByStatus',
@@ -72,7 +74,6 @@ export const {
   setShowPopularOnly, setSortBy, setSortOrder
 } = matchesSlice.actions;
 
-// Selector with strict sorting logic
 export const selectFilteredAndSortedMatches = (state: RootState) => {
   const { rawMatches, selectedSport, showHdOnly, showPopularOnly, sortBy, sortOrder } = state.matches;
 

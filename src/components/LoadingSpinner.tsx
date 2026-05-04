@@ -1,40 +1,17 @@
-import React, { useEffect } from 'react';
-import { grid } from 'ldrs';
+import React from 'react';
 
 interface LoadingSpinnerProps {
-  size?: string | number;
+  size?: string;
   color?: string;
-  speed?: string | number;
-}
-
-// Explicitly register the custom element
-grid.register();
-
-// Extend the JSX Intrinsic Elements so TypeScript recognizes <l-grid>
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'l-grid': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
-        size?: string | number;
-        color?: string;
-        speed?: string | number;
-      };
-    }
-  }
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = "60", 
-  color = "#99ec09", // Brand neon color
-  speed = "1.5" 
+  size = "h-12 w-12", 
+  color = "border-emerald-500" 
 }) => {
   return (
     <div className="flex h-full w-full items-center justify-center p-4 min-h-[150px]">
-      <l-grid
-        size={size}
-        speed={speed}
-        color={color}
-      />
+      <div className={`${size} animate-spin rounded-full border-4 border-slate-800 ${color} border-t-transparent`}></div>
     </div>
   );
 };
