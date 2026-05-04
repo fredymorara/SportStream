@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import MatchCard from '../components/MatchCard';
 import HeroSection from '../components/HeroSection';
@@ -7,75 +7,225 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   fetchMatchesByStatus,
   setSelectedSport,
-  setSelectedStatus,
-  setShowHdOnly,
-  setShowPopularOnly,
-  setSortBy,
-  setSortOrder,
-  selectFilteredAndSortedMatches
 } from '../store/matchesSlice';
 import { fetchSportsCategories } from '../store/sportsSlice';
+import type { APIMatch } from '../services/api';
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Read state from Redux using our typed hooks
   const { list: sports } = useAppSelector((state) => state.sports);
   const {
+    rawMatches,
     loading,
     error,
     selectedSport,
-    selectedStatus,
-    showHdOnly,
-    showPopularOnly,
-    sortBy,
-    sortOrder
   } = useAppSelector((state) => state.matches);
-
-  // Instant memoized filtering directly in the selector
-  const { liveMatches, upcomingMatches } = useAppSelector(selectFilteredAndSortedMatches);
 
   useEffect(() => {
     dispatch(fetchSportsCategories());
   }, [dispatch]);
 
   useEffect(() => {
-    dispatch(fetchMatchesByStatus(selectedStatus));
-  }, [dispatch, selectedStatus]);
+    dispatch(fetchMatchesByStatus('all'));
+  }, [dispatch]);
+
+  const currentTime = Date.now();
+
+  // Filter matches within Today & Tomorrow time window + match toolbar flags + search text
+  const filteredMatches = useMemo(() => {
+    let filtered = [...rawMatches];
+
+    // Determine Today & Tomorrow boundaries in user local time
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfTomorrow = new Date();
+    endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
+    endOfTomorrow.setHours(23, 59, 59, 999);
+
+    filtered = filtered.filter((m) => {
+      const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+      if (isLive) return true;
+      return m.date >= startOfToday.getTime() && m.date <= endOfTomorrow.getTime();
+    });
+
+    // Apply Search Query filter
+    if (searchQuery.trim() !== '') {
+      const lowerQuery = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((m) => 
+        m.title.toLowerCase().includes(lowerQuery) ||
+        m.category?.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    return filtered;
+  }, [rawMatches, searchQuery, currentTime]);
+
+  // Categories definitions exactly as requested
+  const categoryDefinitions = useMemo(() => [
+    {
+      id: 'popular_live',
+      name: 'Popular Live',
+      match: (m: APIMatch, isLive: boolean) => isLive && m.popular
+    },
+    {
+      id: 'football',
+      name: 'Football',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'football'
+    },
+    {
+      id: 'basketball',
+      name: 'Basketball',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'basketball'
+    },
+    {
+      id: 'hockey',
+      name: 'Hockey',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'hockey'
+    },
+    {
+      id: 'baseball',
+      name: 'Baseball',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'baseball'
+    },
+    {
+      id: 'motor_sports',
+      name: 'Motor Sports',
+      match: (m: APIMatch) => ['motor sports', 'motorsport', 'motor-sports', 'formula 1', 'f1', 'nascar', 'motogp'].includes(m.category?.toLowerCase() || '')
+    },
+    {
+      id: 'fight',
+      name: 'Fight (UFC, Boxing)',
+      match: (m: APIMatch) => ['fight', 'ufc', 'boxing', 'mma', 'wrestling', 'wwe'].includes(m.category?.toLowerCase() || '')
+    },
+    {
+      id: 'tennis',
+      name: 'Tennis',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'tennis'
+    },
+    {
+      id: 'rugby',
+      name: 'Rugby',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'rugby'
+    },
+    {
+      id: 'golf',
+      name: 'Golf',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'golf'
+    },
+    {
+      id: 'afl',
+      name: 'AFL',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'afl'
+    },
+    {
+      id: 'cricket',
+      name: 'Cricket',
+      match: (m: APIMatch) => m.category?.toLowerCase() === 'cricket'
+    },
+    {
+      id: 'other',
+      name: 'Other Sports',
+      match: (_m: APIMatch, _isLive: boolean, matchedInCategories: boolean) => !matchedInCategories
+    }
+  ], []);
+
+  const categorizedSections = useMemo(() => {
+    const matchedInCategoriesMatchIds = new Set<string>();
+
+    const sportSections = categoryDefinitions
+      .filter((catDef) => catDef.id !== 'other')
+      .map((catDef) => {
+        const matches = filteredMatches.filter((m) => {
+          const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+          const isMatch = catDef.match(m, isLive);
+          if (isMatch && catDef.id !== 'popular_live') {
+            matchedInCategoriesMatchIds.add(m.id);
+          }
+          return isMatch;
+        });
+
+        const live: APIMatch[] = [];
+        const upcoming: APIMatch[] = [];
+
+        matches.forEach((m) => {
+          const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+          if (isLive) {
+            live.push(m);
+          } else {
+            upcoming.push(m);
+          }
+        });
+
+        live.sort((a, b) => a.date - b.date);
+        upcoming.sort((a, b) => a.date - b.date);
+
+        return {
+          ...catDef,
+          matches: [...live, ...upcoming]
+        };
+      });
+
+    const otherDef = categoryDefinitions.find((c) => c.id === 'other');
+    const otherSection = otherDef ? {
+      ...otherDef,
+      matches: filteredMatches.filter((m) => {
+        const hasMatchedSport = matchedInCategoriesMatchIds.has(m.id);
+        return otherDef.match(m, false, hasMatchedSport);
+      })
+    } : null;
+
+    if (otherSection) {
+      const live: APIMatch[] = [];
+      const upcoming: APIMatch[] = [];
+
+      otherSection.matches.forEach((m) => {
+        const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+        if (isLive) {
+          live.push(m);
+        } else {
+          upcoming.push(m);
+        }
+      });
+
+      live.sort((a, b) => a.date - b.date);
+      upcoming.sort((a, b) => a.date - b.date);
+      otherSection.matches = [...live, ...upcoming];
+    }
+
+    const sections = otherSection ? [...sportSections, otherSection] : sportSections;
+
+    if (selectedSport !== 'all') {
+      return sections.filter((sec) => sec.id === selectedSport || sec.name.toLowerCase().includes(selectedSport));
+    }
+
+    return sections.filter((sec) => sec.matches.length > 0);
+  }, [filteredMatches, categoryDefinitions, selectedSport, currentTime]);
 
   const filterProps = {
-    sports,
+    searchQuery,
+    onSearchQueryChange: setSearchQuery,
     selectedSport,
     onSportChange: (val: string) => dispatch(setSelectedSport(val)),
-    selectedStatus,
-    onStatusChange: (val: string) => dispatch(setSelectedStatus(val)),
-    showHdOnly,
-    onShowHdOnlyChange: (val: boolean) => dispatch(setShowHdOnly(val)),
-    showPopularOnly,
-    onShowPopularOnlyChange: (val: boolean) => dispatch(setShowPopularOnly(val)),
-    sortBy,
-    onSortByChange: (val: 'date' | 'sport') => dispatch(setSortBy(val)),
-    sortOrder,
-    onSortOrderChange: (val: 'asc' | 'desc') => dispatch(setSortOrder(val)),
   };
 
   const featuredMatch = useMemo(() => {
-    if (liveMatches.length > 0) {
-      return liveMatches.find((match) => match.popular) || liveMatches[0];
-    } else if (upcomingMatches.length > 0) {
-      return upcomingMatches[0];
-    }
-    return null;
-  }, [liveMatches, upcomingMatches]);
+    const livePopular = filteredMatches.find((m) => {
+      const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+      return isLive && m.popular;
+    });
+    if (livePopular) return livePopular;
 
-  const getPageTitle = () => {
-    switch (selectedStatus) {
-      case "live": return "Live Matches";
-      case "today": return "Today's Matches";
-      case "upcoming": return "Upcoming Matches";
-      default: return "All Matches";
-    }
-  };
+    const liveAny = filteredMatches.find((m) => {
+      return m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+    });
+    if (liveAny) return liveAny;
+
+    if (filteredMatches.length > 0) return filteredMatches[0];
+    return null;
+  }, [filteredMatches, currentTime]);
 
   if (loading) {
     return (
@@ -87,55 +237,44 @@ const HomePage: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <MainLayout filterProps={filterProps}>
+        <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-slate-800">
+          <p className="text-red-500 text-lg font-medium">{error}</p>
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout filterProps={filterProps}>
       <HeroSection featuredMatch={featuredMatch} />
 
-      <h2 className="text-white text-2xl md:text-3xl font-bold mb-6 tracking-tight drop-shadow-md">
-        {getPageTitle()}
-      </h2>
-
-      {/* Live Section */}
-      {selectedStatus !== 'upcoming' && (
-        <div className="mb-12">
-          <div className="flex items-center gap-2.5 mb-5">
-            <span className="w-3 h-3 rounded-full bg-red-600 animate-pulse"></span>
-            <h3 className="text-white text-xl md:text-2xl font-bold">Live Streams</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {liveMatches.length > 0 ? (
-              liveMatches.map((match) => (
+      {categorizedSections.length > 0 ? (
+        categorizedSections.map((section) => (
+          <div key={section.id} className="mb-12 animate-fade-in">
+            <div className="flex items-center gap-3 mb-6">
+              {section.id === 'popular_live' && (
+                <span className="w-3 h-3 rounded-full bg-red-600 animate-pulse"></span>
+              )}
+              <h3 className="text-white text-xl md:text-2xl font-bold tracking-tight">
+                {section.name}
+              </h3>
+              <span className="text-xs font-semibold text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg backdrop-blur-sm">
+                {section.matches.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {section.matches.map((match) => (
                 <MatchCard key={match.id} match={match} />
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center bg-slate-900/40 rounded-xl border border-slate-800">
-                <p className="text-slate-400 font-medium">No live events available.</p>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* Upcoming Section */}
-      {selectedStatus !== 'live' && (
-        <div>
-          <div className="flex items-center gap-2 mb-5">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-brand-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            <h3 className="text-white text-xl md:text-2xl font-bold">Upcoming Matches</h3>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {upcomingMatches.length > 0 ? (
-              upcomingMatches.map((match) => (
-                <MatchCard key={match.id} match={match} />
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center bg-slate-900/40 rounded-xl border border-slate-800">
-                <p className="text-slate-400 font-medium">No upcoming matches scheduled.</p>
-              </div>
-            )}
-          </div>
+        ))
+      ) : (
+        <div className="text-center py-16 bg-slate-900/30 rounded-2xl border border-slate-800/80">
+          <p className="text-slate-400 font-medium text-lg">No matches available matching your search criteria.</p>
         </div>
       )}
     </MainLayout>
