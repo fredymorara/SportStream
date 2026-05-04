@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface FilterBarProps {
   searchQuery: string;
@@ -150,69 +150,46 @@ const FilterBar: React.FC<FilterBarProps> = ({
   selectedSport,
   onSportChange,
 }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   return (
-    <div className="relative">
-      {/* Mobile Menu Toggle */}
-      <div className="2xl:hidden flex z-50 justify-between items-center bg-slate-800/40 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-800/80 hover:bg-slate-700/80 border border-white/10 rounded-xl text-emerald-400 transition-colors cursor-pointer"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {isMobileMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
+    <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto">
+      {/* Search Input Bar */}
+      <div className="relative flex items-center bg-slate-800/50 rounded-xl border border-white/5 backdrop-blur-sm px-3 py-2 lg:py-1.5 focus-within:ring-1 focus-within:ring-emerald-500/50 transition-all duration-200 select-none w-full lg:w-48 xl:w-56">
+        <svg className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
+          placeholder="Search matches..."
+          className="bg-transparent border-none text-slate-100 placeholder-slate-500 focus:outline-none w-full text-xs font-medium tracking-wide"
+        />
       </div>
 
-      {/* Main Filter / Toolbar Bar */}
-      <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} 2xl:flex flex-col 2xl:flex-row absolute 2xl:relative right-0 top-full 2xl:top-auto z-50 bg-[#0b0f19] 2xl:bg-transparent p-4 2xl:p-0 rounded-xl border border-white/10 2xl:border-none shadow-2xl 2xl:shadow-none items-stretch 2xl:items-center gap-4 text-xs mt-4 2xl:mt-0 min-w-[280px] 2xl:min-w-max`}>
-        
-        {/* Instant Search Bar */}
-        <div className="relative flex items-center bg-slate-800/50 rounded-xl border border-white/5 backdrop-blur-sm px-3 py-1.5 focus-within:ring-1 focus-within:ring-emerald-500/50 transition-all">
-          <svg className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => onSearchQueryChange(e.target.value)}
-            placeholder="Search matches..."
-            className="bg-transparent border-none text-slate-100 placeholder-slate-500 focus:outline-none w-full 2xl:w-44 text-xs"
-          />
-        </div>
+      <div className="h-8 w-px bg-white/10 hidden lg:block flex-shrink-0"></div>
 
-        <div className="h-8 w-px bg-white/10 hidden 2xl:block"></div>
+      {/* Category Icons Bar: Horizontally scrolls smoothly on small screens */}
+      <div className="flex flex-row items-center gap-1.5 bg-slate-800/40 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm w-full lg:w-auto overflow-x-auto scrollbar-none justify-start lg:justify-center">
+        {sportIcons.map((sport) => (
+          <div key={sport.id} className="relative group flex-shrink-0">
+            <button
+              onClick={() => onSportChange(sport.id)}
+              className={`p-2 rounded-xl transition-all duration-300 flex items-center justify-center cursor-pointer ${
+                selectedSport === sport.id
+                  ? 'bg-emerald-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-105'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-700/40'
+              }`}
+            >
+              {sport.icon}
+            </button>
 
-        {/* Category Icons with popups positioned below the icon */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-800/50 p-1.5 rounded-xl border border-white/5 backdrop-blur-sm">
-          {sportIcons.map((sport) => (
-            <div key={sport.id} className="relative group">
-              <button
-                onClick={() => onSportChange(sport.id)}
-                className={`p-2 rounded-xl transition-all duration-300 flex items-center justify-center cursor-pointer ${
-                  selectedSport === sport.id
-                    ? 'bg-emerald-500 text-slate-950 font-bold shadow-[0_0_12px_rgba(16,185,129,0.4)] scale-105'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700/40'
-                }`}
-              >
-                {sport.icon}
-              </button>
-
-              {/* Popup below the icon */}
-              <div className="absolute top-full mt-2 hidden group-hover:block bg-slate-900 border border-slate-700 text-slate-100 text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap z-[100] transform -translate-x-1/2 left-1/2 pointer-events-none transition-all">
-                {sport.name}
-                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-slate-900"></div>
-              </div>
+            {/* Hover tooltip precisely positioned below the icons */}
+            <div className="absolute top-full mt-2 hidden group-hover:block bg-slate-900 border border-slate-700 text-slate-100 text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap z-[100] transform -translate-x-1/2 left-1/2 pointer-events-none transition-all duration-200">
+              {sport.name}
+              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-b-4 border-l-transparent border-r-transparent border-b-slate-900"></div>
             </div>
-          ))}
-        </div>
-
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { list: sports } = useAppSelector((state) => state.sports);
+
   const {
     rawMatches,
     loading,
@@ -140,7 +140,7 @@ const HomePage: React.FC = () => {
       .map((catDef) => {
         const matches = filteredMatches.filter((m) => {
           const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
-          const isMatch = catDef.match(m, isLive);
+          const isMatch = catDef.match(m, isLive, false);
           if (isMatch && catDef.id !== 'popular_live') {
             matchedInCategoriesMatchIds.add(m.id);
           }
@@ -231,7 +231,7 @@ const HomePage: React.FC = () => {
     return (
       <MainLayout filterProps={filterProps}>
         <div className="flex flex-col items-center justify-center min-h-[50vh]">
-          <LoadingSpinner color="#99ec09" size="80" />
+          <LoadingSpinner color="#99ec09" size="800" />
         </div>
       </MainLayout>
     );
@@ -265,7 +265,7 @@ const HomePage: React.FC = () => {
                 {section.matches.length}
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
               {section.matches.map((match) => (
                 <MatchCard key={match.id} match={match} />
               ))}
