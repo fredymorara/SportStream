@@ -1,73 +1,38 @@
-# React + TypeScript + Vite
+# SportStream
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This application consumes a free-to-use API and does not produce, host, or source sports streams itself. It is an educative project only. Any copyright for streams should be directed to the original stream source.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+SportStream is built to demonstrate how a modern frontend application can fetch and display sports-related data from public APIs. It focuses on structure, state management, and reusable components while keeping the app lightweight and easy to understand.
 
-## React Compiler
+## Technology Used
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React**: For the app UI and component-based architecture.
+- **Redux**: For managing global application state and keeping data consistent across the app.
+- **React Router**: For client-side routing and page navigation.
+- **Axios / Fetch**: For API calls to the free data source.
+- **Tailwind CSS / Styled Components**: For styling the interface and layouts.
 
-## Expanding the ESLint configuration
+## Structure
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The project is organized to separate concerns clearly:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- `components/`: Reusable UI building blocks such as headers, cards, and lists.
+- `pages/`: Screen-level components that represent different views or routes.
+- `redux/` or `store/`: State management logic, including actions, reducers, and store configuration.
+- `services/` or `api/`: API helpers and network request functions.
+- `styles/`: Global styles, theme settings, and layout utilities.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## How It Works
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. The app makes requests to a free-to-use sports API.
+2. API responses are stored in Redux state.
+3. Components consume the Redux state and render sports data.
+4. Navigation is handled with React Router to move between screens.
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Notes
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- This project is for educational purposes.
+- It does not create or provide any stream sources.
+- Any legal claims or copyright concerns should be directed to the original stream source.
