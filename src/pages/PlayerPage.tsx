@@ -76,7 +76,7 @@ const PlayerPage: React.FC = () => {
     <MainLayout>
       <div className="flex flex-col gap-6 select-none animate-fade-in">
         
-        {/* Row 1: Live Stream Selector Navigation */}
+        {/* Navigation Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900/40 p-5 rounded-xl border border-slate-800/80 backdrop-blur-sm">
           <div>
             <span className="text-xs font-bold uppercase text-emerald-400 tracking-wider mb-1 block">
@@ -97,7 +97,14 @@ const PlayerPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Row 2: Visual Match Banner (Style-aligned with the Hero Banner) */}
+        {/* Link Selection (Now First) */}
+        <StreamSelector
+          sources={streamsBySource}
+          onStreamSelect={handleStreamSelect}
+          activeStreamId={null}
+        />
+
+        {/* Visual Match Banner (Now at the Bottom) */}
         <div
           className="relative bg-cover bg-center rounded-xl overflow-hidden shadow-2xl p-6 md:p-10 border border-slate-800 min-h-[250px] md:min-h-[300px] flex items-end select-none"
           style={{ backgroundImage: `url(${backgroundImage})` }}
@@ -120,13 +127,6 @@ const PlayerPage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Row 3: Live Link Choices Panel */}
-        <StreamSelector
-          sources={streamsBySource}
-          onStreamSelect={handleStreamSelect}
-          activeStreamId={null}
-        />
       </div>
     </MainLayout>
   );

@@ -94,7 +94,7 @@ const StreamViewPage: React.FC = () => {
     <MainLayout>
       <div className="flex flex-col gap-6 select-none animate-fade-in">
         
-        {/* Row 1: Active Stream Metadata Row */}
+        {/* Active Stream Metadata */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-slate-900/40 p-5 rounded-xl border border-slate-800/80 backdrop-blur-sm">
           <div>
             <h1 className="text-xl md:text-2xl font-black text-white leading-tight">
@@ -112,7 +112,21 @@ const StreamViewPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Row 2: Visual Match Banner (Style-aligned with the Hero Banner) */}
+        {/* Video Player Frame (Now First) */}
+        <div className="bg-black aspect-video w-full lg:w-[60%] mx-auto rounded-xl border border-slate-800 overflow-hidden relative shadow-2xl select-none">
+          <iframe
+            src={stream.embedUrl}
+            title={`${match.title}`}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            allowFullScreen
+            allow="autoplay; encrypted-media; picture-in-picture"
+            className="absolute inset-0 w-full h-full object-cover"
+          ></iframe>
+        </div>
+
+        {/* Visual Match Banner (Now at the Bottom) */}
         <div
           className="relative bg-cover bg-center rounded-xl overflow-hidden shadow-2xl p-6 md:p-10 border border-slate-800 min-h-[200px] md:min-h-[250px] flex items-end select-none"
           style={{ backgroundImage: `url(${backgroundImage})` }}
@@ -134,20 +148,6 @@ const StreamViewPage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Row 3: Video Player Frame */}
-        <div className="bg-black aspect-video w-full lg:w-[60%] mx-auto lg:mx-0 rounded-xl border border-slate-800 overflow-hidden relative shadow-2xl select-none">
-          <iframe
-            src={stream.embedUrl}
-            title={`${match.title}`}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            allowFullScreen
-            allow="autoplay; encrypted-media; picture-in-picture"
-            className="absolute inset-0 w-full h-full object-cover"
-          ></iframe>
         </div>
       </div>
     </MainLayout>
