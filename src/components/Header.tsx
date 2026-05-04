@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ filterProps }) => {
               </svg>
             </div>
             <div className="text-xl md:text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400 whitespace-nowrap select-none">
-              SpaceStream
+              Mpira streams
             </div>
           </Link>
         </div>

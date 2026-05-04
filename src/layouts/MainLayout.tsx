@@ -15,7 +15,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, filterProps, topAdAct
       className="min-h-screen text-slate-100 flex flex-col w-full overflow-x-hidden bg-cover bg-center bg-no-repeat bg-fixed relative"
       style={{ backgroundImage: `url(${bgImage})` }}
     >
-      <div className="absolute inset-0 bg-[#0b0f19]/85 pointer-events-none z-0"></div>
+      <div className="absolute inset-0 bg-[#0b0f19]/30 pointer-events-none z-0"></div>
 
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header filterProps={filterProps} />
