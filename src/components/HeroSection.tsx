@@ -14,15 +14,17 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
 
   if (!featuredMatch) {
     return (
-      <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 mb-8 text-center text-slate-100">
-        <h2 className="text-3xl md:text-4xl font-extrabold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
-          Welcome to SpaceStream!
+      <div className="relative overflow-hidden bg-[#0c0c0c] rounded-[2rem] p-12 mb-12 text-center text-slate-100 min-h-[50vh] flex flex-col items-center justify-center border border-white/5 shadow-2xl">
+        <div className="noise-overlay"></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <h2 className="relative z-10 text-4xl md:text-5xl font-black mb-4 tracking-tighter text-balance text-white">
+          Welcome to <span className="text-emerald-400">Mpira streams</span>
         </h2>
-        <p className="text-slate-400 mb-6 max-w-md mx-auto">
-          Your ultimate destination for live sports streaming.
+        <p className="relative z-10 text-slate-400 mb-8 max-w-lg mx-auto text-lg font-medium">
+          Your ultimate destination for live sports streaming. Premium quality, zero interruptions.
         </p>
         <button
-          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-8 rounded-xl text-md transition-colors duration-200"
+          className="relative z-10 bg-white text-slate-950 font-bold py-4 px-10 rounded-2xl text-md hover-spring tinted-shadow-emerald-hover hover:bg-emerald-400 hover:text-slate-950 cursor-pointer"
           onClick={() => navigate('/')}
         >
           Explore Live Matches
@@ -37,33 +39,41 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
   const isLive = featuredMatch.status?.toLowerCase() === 'live';
 
   return (
-    <div
-      className="relative bg-cover bg-center rounded-xl overflow-hidden shadow-2xl p-6 md:p-12 mb-8 border border-slate-800 min-h-[300px] flex items-end select-none"
-      style={{ backgroundImage: `url(${backgroundImage})` }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent"></div>
+    <div className="relative rounded-[2rem] overflow-hidden mb-16 min-h-[60vh] lg:min-h-[550px] flex items-end select-none group">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] ease-out group-hover:scale-105"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      ></div>
 
-      <div className="relative z-10 flex flex-col md:flex-row items-center justify-between w-full gap-4">
-        <div className="text-center md:text-left">
-          <h2 className="text-2xl md:text-4xl font-black mb-2 leading-tight tracking-tight text-white drop-shadow-md">
+      {/* Cinematic Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/80 to-transparent lg:via-[#0a0a0a]/50 lg:bg-gradient-to-r lg:from-[#0a0a0a] lg:via-[#0a0a0a]/80 lg:to-transparent"></div>
+      <div className="noise-overlay opacity-10"></div>
+      
+      {/* Content */}
+      <div className="relative z-10 w-full p-6 md:p-12 lg:p-16 flex flex-col lg:flex-row items-end justify-between gap-8 max-w-[1440px] mx-auto">
+        <div className="w-full lg:max-w-3xl flex flex-col items-start text-left">
+          {isLive && (
+            <div className="mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-500 px-3 py-1.5 rounded-lg backdrop-blur-md">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              <span className="text-xs font-bold tracking-widest uppercase">Live Now</span>
+            </div>
+          )}
+          <h2 className="text-4xl md:text-5xl lg:text-7xl font-black mb-4 leading-[1.1] tracking-tighter text-white text-balance drop-shadow-2xl">
             {featuredMatch.title}
           </h2>
-          <p className="text-sm md:text-base text-slate-300 font-medium drop-shadow-sm flex items-center justify-center md:justify-start gap-2">
-            <span>📅 {formattedDate}</span>
-            {isLive && (
-              <span className="bg-red-600 text-white text-xs px-2.5 py-1 rounded-md font-extrabold shadow-lg animate-pulse">
-                LIVE
-              </span>
-            )}
+          <p className="text-base md:text-lg text-slate-300 font-medium flex items-center gap-2 mb-8">
+            <span className="opacity-80">Scheduled for</span>
+            <span className="text-white font-bold">{formattedDate}</span>
           </p>
+          
+          <button
+            className="w-full sm:w-auto bg-emerald-500 text-slate-950 font-black py-4 px-10 rounded-2xl text-lg hover-spring hover:scale-[1.02] tinted-shadow-emerald cursor-pointer hover:bg-emerald-400 active:scale-95"
+            onClick={() => navigate(`/watch/${featuredMatch.id}`)}
+          >
+            Watch Stream
+          </button>
         </div>
-
-        <button
-          className="w-full md:w-auto bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 px-8 rounded-xl text-md shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-          onClick={() => navigate(`/watch/${featuredMatch.id}`)}
-        >
-          Watch Stream
-        </button>
       </div>
     </div>
   );

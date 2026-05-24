@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import MainLayout from '../layouts/MainLayout';
-import MatchCard from '../components/MatchCard';
+import Swimlane from '../components/Swimlane';
 import HeroSection from '../components/HeroSection';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -253,28 +253,13 @@ const HomePage: React.FC = () => {
 
       {categorizedSections.length > 0 ? (
         categorizedSections.map((section) => (
-          <div key={section.id} className="mb-12 animate-fade-in">
-            <div className="flex items-center gap-3 mb-6">
-              {section.id === 'popular_live' && (
-                <span className="w-3 h-3 rounded-full bg-red-600 animate-pulse"></span>
-              )}
-              <h3 className="text-white text-xl md:text-2xl font-bold tracking-tight">
-                {section.name}
-              </h3>
-              <span className="text-xs font-semibold text-emerald-400/80 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg backdrop-blur-sm">
-                {section.matches.length}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-              {section.matches.map((match) => (
-                <MatchCard key={match.id} match={match} />
-              ))}
-            </div>
-          </div>
+          <Swimlane key={section.id} section={section} />
         ))
       ) : (
-        <div className="text-center py-16 bg-slate-900/30 rounded-2xl border border-slate-800/80">
-          <p className="text-slate-400 font-medium text-lg">No matches available matching your search criteria.</p>
+        <div className="relative text-center py-32 bg-[#0a0a0a] rounded-[2rem] border border-white/5 overflow-hidden flex flex-col items-center justify-center">
+          <div className="noise-overlay"></div>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-slate-500/5 rounded-full blur-[80px] pointer-events-none"></div>
+          <p className="relative z-10 text-slate-400 font-semibold text-xl tracking-tight">No matches available matching your search criteria.</p>
         </div>
       )}
     </MainLayout>
