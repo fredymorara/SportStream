@@ -12,6 +12,13 @@ const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const navigate = useNavigate();
 
+  const formattedDate = new Date(match.date).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   const imageUrl = match.poster ? api.getPosterUrl(match.poster) : PLACEHOLDER_IMAGE_URL;
   const sportName = match.category || "Match";
 
@@ -71,7 +78,11 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
         {/* Bottom Typography */}
         <div className="flex flex-col items-start transform transition-transform duration-300 group-hover/card:-translate-y-1 mt-auto">
-          <p className="text-emerald-400 font-bold text-xs tracking-wider uppercase mb-1 drop-shadow-md">{sportName}</p>
+          <div className="flex items-center gap-2 mb-1">
+            <p className="text-emerald-400 font-bold text-xs tracking-wider uppercase drop-shadow-md">{sportName}</p>
+            <span className="w-1 h-1 rounded-full bg-white/30"></span>
+            <p className="text-white/90 font-bold text-[10px] tracking-wide drop-shadow-md">{formattedDate}</p>
+          </div>
           <h3 className="text-white text-base sm:text-lg font-black tracking-tight leading-snug line-clamp-2 drop-shadow-lg">
             {match.title}
           </h3>
