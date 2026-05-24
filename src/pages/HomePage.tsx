@@ -11,6 +11,8 @@ import {
 import { fetchSportsCategories } from '../store/sportsSlice';
 import type { APIMatch } from '../services/api';
 
+import { Helmet } from 'react-helmet-async';
+
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
   const [searchQuery, setSearchQuery] = useState('');
@@ -249,6 +251,17 @@ const HomePage: React.FC = () => {
 
   return (
     <MainLayout filterProps={filterProps}>
+      <Helmet>
+        <title>Mpira | Live Premium Sports Streaming</title>
+        <meta name="description" content="Watch high-definition live sports streams completely free. Follow football, basketball, MMA, and more live matches from around the world." />
+        <meta property="og:title" content="Mpira | Live Premium Sports Streaming" />
+        <meta property="og:description" content="Watch high-definition live sports streams completely free. Follow football, basketball, MMA, and more live matches from around the world." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Mpira | Live Premium Sports Streaming" />
+        <meta name="twitter:description" content="Watch high-definition live sports streams completely free." />
+      </Helmet>
+
       <HeroSection featuredMatch={featuredMatch} />
 
       {categorizedSections.length > 0 ? (

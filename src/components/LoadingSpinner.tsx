@@ -1,14 +1,5 @@
 import React from 'react';
 
-// Declare the custom web component for TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'l-cardio': any;
-    }
-  }
-}
-
 interface LoadingSpinnerProps {
   size?: string;
   color?: string;
@@ -25,12 +16,12 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   return (
     <div className="flex h-full w-full items-center justify-center p-4 min-h-[150px]">
-      <l-cardio
-        size={numericSize}
-        stroke="4"
-        speed="2"
-        color={validColor}
-      ></l-cardio>
+      {React.createElement('l-cardio', {
+        size: numericSize,
+        stroke: "4",
+        speed: "2",
+        color: validColor
+      })}
     </div>
   );
 };

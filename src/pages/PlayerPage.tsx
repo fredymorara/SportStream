@@ -11,6 +11,8 @@ import type { Stream } from '../services/api';
 
 const PLACEHOLDER_IMAGE_URL = '/sports_placeholder.png';
 
+import { Helmet } from 'react-helmet-async';
+
 const PlayerPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
@@ -76,6 +78,19 @@ const PlayerPage: React.FC = () => {
 
   return (
     <MainLayout>
+      <Helmet>
+        <title>Watch {match.title} Live | Mpira</title>
+        <meta name="description" content={`Watch the live stream for ${match.title} (${match.category || 'Sports'}). Free HD live streaming.`} />
+        <meta property="og:title" content={`Watch ${match.title} Live | Mpira`} />
+        <meta property="og:description" content={`Watch the live stream for ${match.title}. Free HD live streaming.`} />
+        <meta property="og:image" content={backgroundImage} />
+        <meta property="og:type" content="video.other" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`Watch ${match.title} Live`} />
+        <meta name="twitter:description" content={`Watch the live stream for ${match.title}. Free HD live streaming.`} />
+        <meta name="twitter:image" content={backgroundImage} />
+      </Helmet>
+
       {/* Immersive Match Background */}
       <div 
         className="fixed inset-0 z-[-1] opacity-30 blur-3xl scale-110 pointer-events-none bg-cover bg-center transition-all duration-1000"
