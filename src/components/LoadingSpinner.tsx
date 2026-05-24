@@ -1,17 +1,36 @@
 import React from 'react';
 
+// Declare the custom web component for TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'l-cardio': any;
+    }
+  }
+}
+
 interface LoadingSpinnerProps {
   size?: string;
   color?: string;
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = "h-12 w-12", 
-  color = "border-emerald-500" 
+  size = "50", 
+  color = "#10B981" 
 }) => {
+  // Ensure size is just numbers, otherwise default to 50
+  const numericSize = size.replace(/\D/g, '') || "50";
+  // Ensure color is hex
+  const validColor = color.startsWith('#') ? color : "#10B981";
+
   return (
     <div className="flex h-full w-full items-center justify-center p-4 min-h-[150px]">
-      <div className={`${size} animate-spin rounded-full border-4 border-slate-800 ${color} border-t-transparent`}></div>
+      <l-cardio
+        size={numericSize}
+        stroke="4"
+        speed="2"
+        color={validColor}
+      ></l-cardio>
     </div>
   );
 };

@@ -18,6 +18,7 @@ const StreamViewPage: React.FC = () => {
   const [stream, setStream] = useState<Stream | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   useEffect(() => {
     if (rawMatches.length === 0) {
@@ -29,6 +30,7 @@ const StreamViewPage: React.FC = () => {
     const fetchStreamDetail = async () => {
       try {
         setLoading(true);
+        setIframeLoaded(false);
         const match = rawMatches.find((m) => m.id === matchId);
         if (!match) return;
 
@@ -135,7 +137,19 @@ const StreamViewPage: React.FC = () => {
         {/* Cinematic Video Player Frame */}
         <div className="w-full relative group">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-emerald-700 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-          <div className="bg-black aspect-video w-full rounded-3xl border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,0,0,0.6)] z-10">
+          
+          <div className="bg-[#050505] aspect-video w-full rounded-3xl border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,0,0,0.6)] z-10 flex items-center justify-center">
+            
+            {/* Loading Skeleton */}
+            {!iframeLoaded && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#050505] z-0 animate-fade-in">
+                <LoadingSpinner color="#10B981" size="50" />
+                <p className="mt-6 text-emerald-400 font-bold tracking-widest text-[10px] sm:text-xs uppercase animate-pulse">
+                  Establishing Secure Connection...
+                </p>
+              </div>
+            )}
+
             <iframe
               src={stream.embedUrl}
               title={`${match.title}`}
@@ -143,8 +157,10 @@ const StreamViewPage: React.FC = () => {
               height="100%"
               frameBorder="0"
               allowFullScreen
+              referrerPolicy="no-referrer"
+              onLoad={() => setIframeLoaded(true)}
               allow="autoplay; encrypted-media; picture-in-picture"
-              className="absolute inset-0 w-full h-full object-cover"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${iframeLoaded ? 'opacity-100' : 'opacity-0'}`}
             ></iframe>
           </div>
         </div>
