@@ -27,6 +27,7 @@ interface MatchesState {
   showPopularOnly: boolean;
   sortBy: 'date' | 'sport';
   sortOrder: 'asc' | 'desc';
+  searchQuery: string;
 }
 
 const initialState: MatchesState = {
@@ -38,7 +39,8 @@ const initialState: MatchesState = {
   showHdOnly: false,
   showPopularOnly: false,
   sortBy: 'date',
-  sortOrder: 'asc'
+  sortOrder: 'asc',
+  searchQuery: ''
 };
 
 const matchesSlice = createSlice({
@@ -50,7 +52,8 @@ const matchesSlice = createSlice({
     setShowHdOnly: (state, action: PayloadAction<boolean>) => { state.showHdOnly = action.payload; },
     setShowPopularOnly: (state, action: PayloadAction<boolean>) => { state.showPopularOnly = action.payload; },
     setSortBy: (state, action: PayloadAction<'date' | 'sport'>) => { state.sortBy = action.payload; },
-    setSortOrder: (state, action: PayloadAction<'asc' | 'desc'>) => { state.sortOrder = action.payload; }
+    setSortOrder: (state, action: PayloadAction<'asc' | 'desc'>) => { state.sortOrder = action.payload; },
+    setSearchQuery: (state, action: PayloadAction<string>) => { state.searchQuery = action.payload; }
   },
   extraReducers: (builder) => {
     builder
@@ -71,7 +74,7 @@ const matchesSlice = createSlice({
 
 export const {
   setSelectedStatus, setSelectedSport, setShowHdOnly,
-  setShowPopularOnly, setSortBy, setSortOrder
+  setShowPopularOnly, setSortBy, setSortOrder, setSearchQuery
 } = matchesSlice.actions;
 
 export const selectFilteredAndSortedMatches = (state: RootState) => {

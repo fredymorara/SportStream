@@ -1,12 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import MainLayout from '../layouts/MainLayout';
-import Swimlane from '../components/Swimlane';
+import MatchGrid from '../components/MatchGrid';
 import HeroSection from '../components/HeroSection';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   fetchMatchesByStatus,
-  setSelectedSport,
 } from '../store/matchesSlice';
 import { fetchSportsCategories } from '../store/sportsSlice';
 import type { APIMatch } from '../services/api';
@@ -15,14 +14,13 @@ import { Helmet } from 'react-helmet-async';
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const [searchQuery, setSearchQuery] = useState('');
-
 
   const {
     rawMatches,
     loading,
     error,
     selectedSport,
+    searchQuery,
   } = useAppSelector((state) => state.matches);
 
   useEffect(() => {
@@ -161,8 +159,24 @@ const HomePage: React.FC = () => {
           }
         });
 
-        live.sort((a, b) => a.date - b.date);
-        upcoming.sort((a, b) => a.date - b.date);
+        live.sort((a, b) => {
+          if (catDef.id === 'popular_live') {
+            const aIsFootball = a.category?.toLowerCase() === 'football';
+            const bIsFootball = b.category?.toLowerCase() === 'football';
+            if (aIsFootball && !bIsFootball) return -1;
+            if (!aIsFootball && bIsFootball) return 1;
+          }
+          return a.date - b.date;
+        });
+        upcoming.sort((a, b) => {
+          if (catDef.id === 'popular_live') {
+            const aIsFootball = a.category?.toLowerCase() === 'football';
+            const bIsFootball = b.category?.toLowerCase() === 'football';
+            if (aIsFootball && !bIsFootball) return -1;
+            if (!aIsFootball && bIsFootball) return 1;
+          }
+          return a.date - b.date;
+        });
 
         return {
           ...catDef,
@@ -206,14 +220,17 @@ const HomePage: React.FC = () => {
     return sections.filter((sec) => sec.matches.length > 0);
   }, [filteredMatches, categoryDefinitions, selectedSport, currentTime]);
 
-  const filterProps = {
-    searchQuery,
-    onSearchQueryChange: setSearchQuery,
-    selectedSport,
-    onSportChange: (val: string) => dispatch(setSelectedSport(val)),
-  };
+  const filterProps = {};
 
   const featuredMatch = useMemo(() => {
+    // 1. Live, Popular, Football
+    const livePopularFootball = filteredMatches.find((m) => {
+      const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
+      return isLive && m.popular && m.category?.toLowerCase() === 'football';
+    });
+    if (livePopularFootball) return livePopularFootball;
+
+    // 2. Live, Popular (any sport)
     const livePopular = filteredMatches.find((m) => {
       const isLive = m.status?.toLowerCase() === 'live' || (m.date <= currentTime && m.sources && m.sources.length > 0);
       return isLive && m.popular;
@@ -232,8 +249,8 @@ const HomePage: React.FC = () => {
   if (loading) {
     return (
       <MainLayout filterProps={filterProps}>
-        <div className="flex flex-col items-center justify-center min-h-[50vh]">
-          <LoadingSpinner color="#99ec09" size="800" />
+        <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fade-in-up">
+          <LoadingSpinner color="#10B981" size="240" />
         </div>
       </MainLayout>
     );
@@ -242,8 +259,14 @@ const HomePage: React.FC = () => {
   if (error) {
     return (
       <MainLayout filterProps={filterProps}>
-        <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-slate-800">
-          <p className="text-red-500 text-lg font-medium">{error}</p>
+        <div className="text-center py-16 flex flex-col items-center justify-center min-h-[40vh] animate-fade-in-up border-t border-white/5 mt-8">
+          <div className="bg-red-500/10 p-4 rounded-full mb-4">
+            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <p className="text-white text-lg font-bold mb-2">Failed to load content</p>
+          <p className="text-zinc-500 text-sm">{error}</p>
         </div>
       </MainLayout>
     );
@@ -265,16 +288,32 @@ const HomePage: React.FC = () => {
       <HeroSection featuredMatch={featuredMatch} />
 
       {categorizedSections.length > 0 ? (
-        categorizedSections.map((section) => (
-          <Swimlane key={section.id} section={section} />
-        ))
+        <div className="space-y-4">
+          {categorizedSections.map((section) => (
+            <MatchGrid key={section.id} section={section} />
+          ))}
+        </div>
       ) : (
-        <div className="relative text-center py-32 bg-[#0a0a0a] rounded-[2rem] border border-white/5 overflow-hidden flex flex-col items-center justify-center">
-          <div className="noise-overlay"></div>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-slate-500/5 rounded-full blur-[80px] pointer-events-none"></div>
-          <p className="relative z-10 text-slate-400 font-semibold text-xl tracking-tight">No matches available matching your search criteria.</p>
+        <div className="text-center py-24 flex flex-col items-center justify-center min-h-[40vh] border-t border-white/5 mt-8">
+          <div className="mb-4 bg-zinc-900 p-4 rounded-full">
+            <svg className="w-8 h-8 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <p className="text-white font-semibold text-xl mb-2">No matches found</p>
+          <p className="text-zinc-500 text-sm">Try adjusting your search criteria or checking back later.</p>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="mt-20 pt-8 pb-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-zinc-500 text-sm gap-4">
+        <p>© {new Date().getFullYear()} SportStream. All rights reserved.</p>
+        <div className="flex items-center gap-6">
+          <a href="#" className="hover:text-emerald-400 transition-colors">Privacy Policy</a>
+          <a href="#" className="hover:text-emerald-400 transition-colors">Terms of Service</a>
+          <a href="#" className="hover:text-emerald-400 transition-colors">Contact</a>
+        </div>
+      </footer>
     </MainLayout>
   );
 };
