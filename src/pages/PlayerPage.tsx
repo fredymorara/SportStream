@@ -79,9 +79,9 @@ const PlayerPage: React.FC = () => {
   return (
     <MainLayout>
       <Helmet>
-        <title>Watch {match.title} Live | Mpira</title>
-        <meta name="description" content={`Watch the live stream for ${match.title} (${match.category || 'Sports'}). Free HD live streaming.`} />
-        <meta property="og:title" content={`Watch ${match.title} Live | Mpira`} />
+        <title>Watch {match.title} Live | SportStream</title>
+        <meta name="description" content={`Watch ${match.title} live stream. Select from multiple servers for the best HD streaming experience.`} />
+        <meta property="og:title" content={`Watch ${match.title} Live | SportStream`} />
         <meta property="og:description" content={`Watch the live stream for ${match.title}. Free HD live streaming.`} />
         <meta property="og:image" content={backgroundImage} />
         <meta property="og:type" content="video.other" />

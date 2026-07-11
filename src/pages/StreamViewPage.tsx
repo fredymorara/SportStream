@@ -99,7 +99,7 @@ const StreamViewPage: React.FC = () => {
   return (
     <MainLayout>
       <Helmet>
-        <title>{match.title} | Live Stream | Mpira</title>
+        <title>{match.title} | Live Stream | SportStream</title>
         <meta name="description" content={`Watching ${match.title} live stream on Server ${stream.streamNo}. Free HD live sports streaming.`} />
         <meta property="og:title" content={`${match.title} | Live Stream`} />
         <meta property="og:description" content={`Watching ${match.title} live stream. Free HD live sports streaming.`} />
