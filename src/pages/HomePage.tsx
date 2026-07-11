@@ -81,6 +81,11 @@ const HomePage: React.FC = () => {
       match: (m: APIMatch) => m.category?.toLowerCase() === 'basketball'
     },
     {
+      id: 'american_football',
+      name: 'NFL / Am. Football',
+      match: (m: APIMatch) => ['american football', 'nfl', 'american_football'].includes(m.category?.toLowerCase() || '')
+    },
+    {
       id: 'hockey',
       name: 'Hockey',
       match: (m: APIMatch) => m.category?.toLowerCase() === 'hockey'
