@@ -1,44 +1,65 @@
-const BASE_URL = "https://streamed.pk/api";
+const PRIMARY_API_URL = "https://api.ppv.st";
+const CACHE_DURATION_MS = 60_000;
 
-// Strict Type Definitions matching the API schema
+interface ApiResponse {
+  success: boolean;
+}
+
+interface PingResponse extends ApiResponse {
+  domains?: string[];
+}
+
+interface ProviderStream {
+  id: number;
+  name: string;
+  tag?: string;
+  poster?: string;
+  uri_name: string;
+  starts_at: number;
+  ends_at: number;
+  always_live: number;
+  category_name?: string;
+  iframe?: string;
+  allowpaststreams?: number;
+}
+
+export interface StreamCategory {
+  category: string;
+  id: number;
+  always_live: number;
+  streams: ProviderStream[];
+}
+
+interface StreamsResponse extends ApiResponse {
+  streams: StreamCategory[];
+}
+
 export interface APIMatch {
   id: string;
   title: string;
   category: string;
   date: number;
+  endsAt: number;
   poster?: string;
-  popular: boolean;
-  status?: string;
-  teams?: {
-    home?: {
-      name: string;
-      badge: string;
-    };
-    away?: {
-      name: string;
-      badge: string;
-    };
-  };
-  sources: {
-    source: string;
-    id: string;
-    hd?: boolean;
-  }[];
-}
-
-export interface Stream {
-  id: string;
-  streamNo: number;
-  language: string;
-  hd: boolean;
-  embedUrl: string;
-  source: string;
+  status: "live" | "upcoming" | "ended";
+  uriName: string;
+  tag?: string;
+  alwaysLive: boolean;
+  iframe?: string;
+  allowPastStreams: boolean;
 }
 
 export interface Sport {
   id: string;
   name: string;
 }
+
+const normalizeDomain = (domain: string) => {
+  const withProtocol = /^https?:\/\//i.test(domain)
+    ? domain
+    : `https://${domain}`;
+  return withProtocol.replace(/\/+$/, "");
+};
 
 const fetchJson = async <T>(url: string): Promise<T> => {
   const response = await fetch(url);
@@ -48,29 +69,114 @@ const fetchJson = async <T>(url: string): Promise<T> => {
   return response.json();
 };
 
-export const api = {
-  // Sports API
-  getSports: () => fetchJson<Sport[]>(`${BASE_URL}/sports`),
+let domainsPromise: Promise<string[]> | null = null;
+const getApiDomains = () => {
+  if (!domainsPromise) {
+    domainsPromise = fetchJson<PingResponse>(`${PRIMARY_API_URL}/api/ping`)
+      .then((response) => {
+        if (!response.success) return [PRIMARY_API_URL];
+        const mirrors = (response.domains || []).map(normalizeDomain);
+        return [...new Set([PRIMARY_API_URL, ...mirrors])];
+      })
+      .catch(() => [PRIMARY_API_URL]);
+  }
+  return domainsPromise;
+};
 
-  // Matches API
-  getAllMatches: () => fetchJson<APIMatch[]>(`${BASE_URL}/matches/all`),
-  getLiveMatches: () => fetchJson<APIMatch[]>(`${BASE_URL}/matches/live`),
-  getTodayMatches: () => fetchJson<APIMatch[]>(`${BASE_URL}/matches/all-today`),
-  getSportMatches: (sport: string) =>
-    fetchJson<APIMatch[]>(`${BASE_URL}/matches/${sport}`),
-  getPopularMatches: (endpoint: string) =>
-    fetchJson<APIMatch[]>(`${BASE_URL}/matches/${endpoint}/popular`),
+const fetchFromAvailableDomain = async <T>(path: string): Promise<T> => {
+  const domains = await getApiDomains();
+  let lastError: unknown;
 
-  // Streams API
-  getStreams: (source: string, id: string) =>
-    fetchJson<Stream[]>(`${BASE_URL}/stream/${source}/${id}`),
-
-  // Images API
-  getBadgeUrl: (badge: string) => `${BASE_URL}/images/badge/${badge}.webp`,
-  getPosterUrl: (posterId: string) => {
-    if (posterId && posterId.startsWith("/")) {
-      return `https://streamed.pk${posterId}.webp`;
+  for (const domain of domains) {
+    try {
+      const response = await fetchJson<T>(`${domain}${path}`);
+      if (
+        response &&
+        typeof response === "object" &&
+        "success" in response &&
+        (response as ApiResponse).success === false
+      ) {
+        throw new Error(
+          `The API at ${domain} reported an unsuccessful response.`,
+        );
+      }
+      return response;
+    } catch (error) {
+      lastError = error;
     }
-    return `${BASE_URL}/images/proxy/${posterId}.webp`;
-  },
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Unable to reach the streams API.");
+};
+
+let cachedCategories: StreamCategory[] | null = null;
+let cacheExpiresAt = 0;
+let categoriesPromise: Promise<StreamCategory[]> | null = null;
+
+const getStreamCategories = async () => {
+  if (cachedCategories && Date.now() < cacheExpiresAt) return cachedCategories;
+  if (categoriesPromise) return categoriesPromise;
+
+  categoriesPromise = fetchFromAvailableDomain<StreamsResponse>("/api/streams")
+    .then((response) => {
+      if (!response.success || !Array.isArray(response.streams)) {
+        throw new Error("The streams API returned an invalid response.");
+      }
+      cachedCategories = response.streams;
+      cacheExpiresAt = Date.now() + CACHE_DURATION_MS;
+      return cachedCategories;
+    })
+    .finally(() => {
+      categoriesPromise = null;
+    });
+
+  return categoriesPromise;
+};
+
+const toMatch = (
+  stream: ProviderStream,
+  category: StreamCategory,
+): APIMatch => {
+  const startsAt = stream.starts_at * 1000;
+  const endsAt = stream.ends_at * 1000;
+  const alwaysLive = stream.always_live === 1 || category.always_live === 1;
+  const now = Date.now();
+  const status =
+    alwaysLive || (startsAt <= now && endsAt >= now)
+      ? "live"
+      : startsAt > now
+        ? "upcoming"
+        : "ended";
+
+  return {
+    id: String(stream.id),
+    title: stream.name,
+    category: stream.category_name || category.category,
+    date: startsAt,
+    endsAt,
+    poster: stream.poster,
+    status,
+    uriName: stream.uri_name,
+    tag: stream.tag,
+    alwaysLive,
+    iframe: stream.iframe,
+    allowPastStreams: stream.allowpaststreams === 1,
+  };
+};
+
+export const api = {
+  getSports: async (): Promise<Sport[]> =>
+    (await getStreamCategories()).map((category) => ({
+      id: String(category.id),
+      name: category.category,
+    })),
+
+  getAllMatches: async (): Promise<APIMatch[]> =>
+    (await getStreamCategories()).flatMap((category) =>
+      (category.streams || []).map((stream) => toMatch(stream, category)),
+    ),
+
+  getPosterUrl: (poster?: string) => poster || "/sports_placeholder.png",
 };
