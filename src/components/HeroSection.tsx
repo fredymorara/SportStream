@@ -20,8 +20,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
           Welcome to SportStream
         </h2>
         <p className="mb-6 max-w-md">
-          Your premium destination for live sports streaming. Select a category
-          from the sidebar to get started.
+          Your home for live sports and upcoming events.
         </p>
         <button
           className="bg-emerald-500 text-black font-semibold py-2.5 px-6 rounded-md hover:bg-emerald-400 transition-colors"
@@ -47,7 +46,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
   const isLive = featuredMatch.status?.toLowerCase() === "live";
 
   return (
-    <div className="w-full mb-12 flex flex-col lg:flex-row gap-6 animate-fade-in-up">
+    <div className="mb-12 flex w-full flex-col gap-6 lg:flex-row">
       {/* Main Image Area */}
       <div
         className="flex-1 relative aspect-video lg:aspect-auto lg:h-[450px] bg-zinc-900 rounded-xl overflow-hidden cursor-pointer group"
@@ -58,13 +57,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
         <img
           src={backgroundImage}
           alt={featuredMatch.title}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-500"></div>
+        <div className="absolute inset-0 bg-black/20"></div>
 
         {/* Play Button Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white">
             <svg
               className="w-8 h-8 text-white ml-1"
               fill="currentColor"
@@ -80,7 +79,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
       <div className="lg:w-[400px] flex flex-col justify-end p-2 lg:p-4">
         {isLive && (
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            <span className="h-2 w-2 rounded-full bg-red-500"></span>
             <span className="text-red-500 text-xs font-bold uppercase tracking-wider">
               Live Now
             </span>

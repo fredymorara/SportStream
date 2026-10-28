@@ -5,7 +5,6 @@ import HeroSection from "../components/HeroSection";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchMatchesByStatus } from "../store/matchesSlice";
-import { fetchSportsCategories } from "../store/sportsSlice";
 import type { APIMatch } from "../services/api";
 
 import { Helmet } from "react-helmet-async";
@@ -15,10 +14,6 @@ const HomePage: React.FC = () => {
 
   const { rawMatches, loading, error, selectedSport, searchQuery } =
     useAppSelector((state) => state.matches);
-
-  useEffect(() => {
-    dispatch(fetchSportsCategories());
-  }, [dispatch]);
 
   useEffect(() => {
     dispatch(fetchMatchesByStatus("all"));
@@ -72,27 +67,9 @@ const HomePage: React.FC = () => {
         match: (_m: APIMatch, isLive: boolean) => isLive,
       },
       {
-        id: "football",
-        name: "Football",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "football",
-      },
-      {
         id: "basketball",
         name: "Basketball",
         match: (m: APIMatch) => m.category?.toLowerCase() === "basketball",
-      },
-      {
-        id: "american_football",
-        name: "NFL / Am. Football",
-        match: (m: APIMatch) =>
-          ["american football", "nfl", "american_football"].includes(
-            m.category?.toLowerCase() || "",
-          ),
-      },
-      {
-        id: "hockey",
-        name: "Hockey",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "hockey",
       },
       {
         id: "baseball",
@@ -100,55 +77,13 @@ const HomePage: React.FC = () => {
         match: (m: APIMatch) => m.category?.toLowerCase() === "baseball",
       },
       {
-        id: "motor_sports",
-        name: "Motor Sports",
-        match: (m: APIMatch) =>
-          [
-            "motor sports",
-            "motorsport",
-            "motor-sports",
-            "formula 1",
-            "f1",
-            "nascar",
-            "motogp",
-          ].includes(m.category?.toLowerCase() || ""),
-      },
-      {
-        id: "fight",
-        name: "Fight (UFC, Boxing)",
-        match: (m: APIMatch) =>
-          ["fight", "ufc", "boxing", "mma", "wrestling", "wwe"].includes(
-            m.category?.toLowerCase() || "",
-          ),
-      },
-      {
-        id: "tennis",
-        name: "Tennis",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "tennis",
-      },
-      {
-        id: "rugby",
-        name: "Rugby",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "rugby",
-      },
-      {
-        id: "golf",
-        name: "Golf",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "golf",
-      },
-      {
-        id: "afl",
-        name: "AFL",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "afl",
-      },
-      {
-        id: "cricket",
-        name: "Cricket",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "cricket",
+        id: "football",
+        name: "Football",
+        match: (m: APIMatch) => m.category?.toLowerCase() === "football",
       },
       {
         id: "other",
-        name: "Other Sports",
+        name: "Others",
         match: (_m: APIMatch, _isLive: boolean, matchedInCategories: boolean) =>
           !matchedInCategories,
       },
@@ -255,15 +190,22 @@ const HomePage: React.FC = () => {
     return sections.filter((sec) => sec.matches.length > 0);
   }, [filteredMatches, categoryDefinitions, selectedSport, currentTime]);
 
-  const filterProps = {};
-
   const featuredMatch = useMemo(() => {
-    // Prefer a live football event for the featured position.
-    const liveFootball = filteredMatches.find((m) => {
-      const isLive = m.status === "live";
-      return isLive && m.category?.toLowerCase() === "football";
-    });
-    if (liveFootball) return liveFootball;
+    const footballEvents = rawMatches
+      .filter(
+        (match) =>
+          match.category?.trim().toLowerCase() === "football" &&
+          (match.status !== "ended" || match.allowPastStreams),
+      )
+      .sort((a, b) => {
+        const statusPriority = (status: APIMatch["status"]) =>
+          status === "live" ? 0 : status === "upcoming" ? 1 : 2;
+        const priorityDifference =
+          statusPriority(a.status) - statusPriority(b.status);
+        if (priorityDifference !== 0) return priorityDifference;
+        return a.status === "ended" ? b.date - a.date : a.date - b.date;
+      });
+    if (footballEvents.length > 0) return footballEvents[0];
 
     const liveAny = filteredMatches.find((m) => {
       return m.status === "live";
@@ -272,12 +214,12 @@ const HomePage: React.FC = () => {
 
     if (filteredMatches.length > 0) return filteredMatches[0];
     return null;
-  }, [filteredMatches, currentTime]);
+  }, [rawMatches, filteredMatches, currentTime]);
 
   if (loading) {
     return (
-      <MainLayout filterProps={filterProps}>
-        <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fade-in-up">
+      <MainLayout>
+        <div className="flex min-h-[70vh] flex-col items-center justify-center">
           <LoadingSpinner color="#10B981" size="240" />
         </div>
       </MainLayout>
@@ -286,8 +228,8 @@ const HomePage: React.FC = () => {
 
   if (error) {
     return (
-      <MainLayout filterProps={filterProps}>
-        <div className="text-center py-16 flex flex-col items-center justify-center min-h-[40vh] animate-fade-in-up border-t border-white/5 mt-8">
+      <MainLayout>
+        <div className="mt-8 flex min-h-[40vh] flex-col items-center justify-center border-t border-white/5 py-16 text-center">
           <div className="bg-red-500/10 p-4 rounded-full mb-4">
             <svg
               className="w-8 h-8 text-red-500"
@@ -313,7 +255,7 @@ const HomePage: React.FC = () => {
   }
 
   return (
-    <MainLayout filterProps={filterProps}>
+    <MainLayout>
       <Helmet>
         <title>SportStream | Live Premium Sports Streaming</title>
         <meta

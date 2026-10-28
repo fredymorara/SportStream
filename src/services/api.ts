@@ -20,7 +20,26 @@ interface ProviderStream {
   always_live: number;
   category_name?: string;
   iframe?: string;
+  substreams?: ProviderSubstream[];
   allowpaststreams?: number;
+}
+
+interface ProviderSubstream {
+  id: number;
+  name: string;
+  tag?: string;
+  source_tag?: string;
+  locale?: string;
+  uri_name: string;
+  iframe?: string;
+}
+
+export interface StreamLink {
+  id: string;
+  label: string;
+  locale?: string;
+  uriName: string;
+  iframe: string;
 }
 
 export interface StreamCategory {
@@ -46,12 +65,8 @@ export interface APIMatch {
   tag?: string;
   alwaysLive: boolean;
   iframe?: string;
+  streamLinks: StreamLink[];
   allowPastStreams: boolean;
-}
-
-export interface Sport {
-  id: string;
-  name: string;
 }
 
 const normalizeDomain = (domain: string) => {
@@ -149,6 +164,27 @@ const toMatch = (
       : startsAt > now
         ? "upcoming"
         : "ended";
+  const streamLinks: StreamLink[] = [
+    ...(stream.iframe
+      ? [
+          {
+            id: String(stream.id),
+            label: stream.tag || "Main feed",
+            uriName: stream.uri_name,
+            iframe: stream.iframe,
+          },
+        ]
+      : []),
+    ...(stream.substreams || [])
+      .filter((substream) => Boolean(substream.iframe))
+      .map((substream) => ({
+        id: String(substream.id),
+        label: substream.source_tag || substream.tag || substream.name,
+        locale: substream.locale,
+        uriName: substream.uri_name,
+        iframe: substream.iframe as string,
+      })),
+  ];
 
   return {
     id: String(stream.id),
@@ -162,17 +198,12 @@ const toMatch = (
     tag: stream.tag,
     alwaysLive,
     iframe: stream.iframe,
+    streamLinks,
     allowPastStreams: stream.allowpaststreams === 1,
   };
 };
 
 export const api = {
-  getSports: async (): Promise<Sport[]> =>
-    (await getStreamCategories()).map((category) => ({
-      id: String(category.id),
-      name: category.category,
-    })),
-
   getAllMatches: async (): Promise<APIMatch[]> =>
     (await getStreamCategories()).flatMap((category) =>
       (category.streams || []).map((stream) => toMatch(stream, category)),

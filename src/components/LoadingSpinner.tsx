@@ -1,26 +1,26 @@
-import React from 'react';
+import React from "react";
 
 interface LoadingSpinnerProps {
   size?: string;
   color?: string;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ 
-  size = "50", 
-  color = "#10B981" 
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
+  size = "50",
+  color = "#10B981",
 }) => {
   // Ensure size is just numbers, otherwise default to 50
-  const numericSize = size.replace(/\D/g, '') || "50";
+  const numericSize = size.replace(/\D/g, "") || "50";
   // Ensure color is hex
-  const validColor = color.startsWith('#') ? color : "#10B981";
+  const validColor = color.startsWith("#") ? color : "#10B981";
 
   return (
     <div className="flex h-full w-full items-center justify-center p-4 min-h-[150px]">
-      {React.createElement('l-cardio', {
+      {React.createElement("l-cardio", {
         size: numericSize,
         stroke: "4",
         speed: "2",
-        color: validColor
+        color: validColor,
       })}
     </div>
   );
@@ -28,7 +28,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 export const MatchCardSkeleton: React.FC = () => {
   return (
-    <div className="bg-slate-900/40 border border-slate-800 rounded-xl shadow-lg overflow-hidden animate-pulse">
+    <div className="bg-slate-900/40 border border-slate-800 rounded-xl shadow-lg overflow-hidden">
       <div className="w-full h-48 bg-slate-800"></div>
       <div className="p-4">
         <div className="h-6 bg-slate-800 rounded w-3/4 mb-2"></div>

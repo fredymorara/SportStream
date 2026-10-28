@@ -1,6 +1,6 @@
-import React from 'react';
-import MatchCard from './MatchCard';
-import type { APIMatch } from '../services/api';
+import React from "react";
+import MatchCard from "./MatchCard";
+import type { APIMatch } from "../services/api";
 
 interface MatchGridProps {
   section: {
@@ -12,7 +12,7 @@ interface MatchGridProps {
 
 const MatchGrid: React.FC<MatchGridProps> = ({ section }) => {
   return (
-    <div className="mb-12 animate-fade-in-up">
+    <div className="mb-12">
       {/* Clean Category Header */}
       <div className="flex items-center gap-3 mb-6">
         <h3 className="text-xl md:text-2xl font-bold text-white">

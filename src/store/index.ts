@@ -1,11 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
 import matchesReducer from "./matchesSlice";
-import sportsReducer from "./sportsSlice";
 
 export const store = configureStore({
   reducer: {
     matches: matchesReducer,
-    sports: sportsReducer,
   },
 });
 

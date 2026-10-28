@@ -31,32 +31,30 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       onClick={() => navigate(`/watch/${encodeURIComponent(match.uriName)}`)}
     >
       {/* Thumbnail Container */}
-      <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900 border border-white/5 group-hover:border-white/20 hover-lift">
+      <div className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-zinc-900 group-hover:border-white/25">
         <img
           src={imageUrl}
           alt={`${match.title}`}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover"
           loading="lazy"
         />
 
         {/* Play Button Overlay */}
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300 shadow-lg">
-            <svg
-              className="w-6 h-6 text-black ml-1"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
+        <div className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white">
+          <svg
+            className="ml-0.5 h-4 w-4"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
         </div>
 
         {/* Top Badges overlaying image slightly */}
         <div className="absolute top-2 left-2 right-2 flex justify-between items-start pointer-events-none">
           {isLive ? (
             <div className="bg-red-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
               LIVE
             </div>
           ) : match.status === "upcoming" ? (
@@ -78,7 +76,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
           <span>•</span>
           <span>{formattedDate}</span>
         </div>
-        <h3 className="text-white text-sm sm:text-base font-bold leading-snug line-clamp-2 group-hover:text-blue-400 transition-colors">
+        <h3 className="text-white text-sm sm:text-base font-bold leading-snug line-clamp-2 group-hover:text-blue-300">
           {match.title}
         </h3>
       </div>

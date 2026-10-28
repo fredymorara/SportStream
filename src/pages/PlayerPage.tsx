@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -17,10 +17,18 @@ const PlayerPage: React.FC = () => {
 
   const { rawMatches } = useAppSelector((state) => state.matches);
   const { loading, error } = useAppSelector((state) => state.matches);
+  const [selectedLinkId, setSelectedLinkId] = useState("");
+  const [frameLoaded, setFrameLoaded] = useState(false);
+  const [streamStarted, setStreamStarted] = useState(false);
 
   const match = useMemo(() => {
     return rawMatches.find((m) => m.uriName === matchId) || null;
   }, [rawMatches, matchId]);
+
+  const selectedLink =
+    match?.streamLinks.find((link) => link.id === selectedLinkId) ||
+    match?.streamLinks[0] ||
+    null;
 
   useEffect(() => {
     if (rawMatches.length === 0) {
@@ -28,10 +36,20 @@ const PlayerPage: React.FC = () => {
     }
   }, [dispatch, rawMatches.length]);
 
+  useEffect(() => {
+    setSelectedLinkId(match?.streamLinks[0]?.id || "");
+    setFrameLoaded(false);
+  }, [match?.id]);
+
+  useEffect(() => {
+    setFrameLoaded(false);
+    setStreamStarted(false);
+  }, [selectedLink?.id]);
+
   if (loading && rawMatches.length === 0) {
     return (
-      <MainLayout>
-        <div className="flex flex-col items-center justify-center min-h-[50vh]">
+      <MainLayout fullViewport>
+        <div className="flex h-full flex-col items-center justify-center">
           <LoadingSpinner color="#10B981" size="80" />
         </div>
       </MainLayout>
@@ -40,8 +58,8 @@ const PlayerPage: React.FC = () => {
 
   if (error || !match) {
     return (
-      <MainLayout>
-        <div className="max-w-md mx-auto text-center py-12 glass-panel rounded-2xl p-8 mt-12">
+      <MainLayout fullViewport>
+        <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center px-6 text-center">
           <p className="text-red-500 text-lg font-medium mb-6">
             Match not found or streams failed to load.
           </p>
@@ -69,7 +87,7 @@ const PlayerPage: React.FC = () => {
   });
 
   return (
-    <MainLayout>
+    <MainLayout fullViewport>
       <Helmet>
         <title>Watch {match.title} | SportStream</title>
         <meta
@@ -95,133 +113,159 @@ const PlayerPage: React.FC = () => {
         <meta name="twitter:image" content={backgroundImage} />
       </Helmet>
 
-      {/* Immersive Match Background */}
-      <div
-        className="fixed inset-0 z-[-1] opacity-30 blur-3xl scale-110 pointer-events-none bg-cover bg-center transition-all duration-1000"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      ></div>
-      <div className="fixed inset-0 z-[-1] bg-gradient-to-b from-[#0a0a0a]/50 via-[#0a0a0a]/80 to-[#0a0a0a] pointer-events-none"></div>
-
-      <div className="flex flex-col gap-8 select-none animate-fade-in max-w-5xl mx-auto w-full mt-4">
-        {/* Cinematic Header Panel */}
-        <div className="glass-panel p-6 md:p-10 rounded-[2rem] border border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
-
-          <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center md:items-start">
-            {/* Match Poster Thumbnail */}
-            <div className="w-full max-w-[240px] md:w-48 aspect-[3/4] md:aspect-square flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] border border-white/10 relative group-hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] transition-all duration-500">
-              <img
-                src={backgroundImage}
-                alt={match.title}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              />
-              {isLive && (
-                <div className="absolute top-3 left-3 bg-red-600 text-white text-[10px] uppercase font-black px-2.5 py-1 rounded shadow-[0_0_15px_rgba(239,68,68,0.9)] animate-pulse tracking-widest flex items-center gap-1.5 z-20">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
-                  LIVE NOW
-                </div>
-              )}
-            </div>
-
-            {/* Match Info */}
-            <div className="flex flex-col flex-1 justify-center h-full text-center md:text-left pt-2 md:pt-4">
-              <span className="text-emerald-400 font-black text-xs tracking-widest uppercase mb-3 drop-shadow-md flex items-center justify-center md:justify-start gap-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-                {match.tag || "Event Stream"}
-              </span>
-              <h1 className="text-3xl md:text-5xl font-black text-white leading-tight tracking-tighter mb-4 drop-shadow-lg">
-                {match.title}
-              </h1>
-              <div className="flex items-center justify-center md:justify-start gap-3 text-slate-300 font-medium text-sm border-b border-white/5 pb-6 mb-6">
-                <span className="bg-white/5 px-3 py-1.5 rounded-lg border border-white/5 text-xs uppercase tracking-wider">
-                  {match.category || "Match"}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="w-4 h-4 text-emerald-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>{" "}
-                  {formattedDate}
-                </span>
-              </div>
-              <button
-                onClick={() => navigate("/")}
-                className="self-center md:self-start text-slate-400 hover:text-emerald-400 font-bold text-xs uppercase tracking-widest transition-colors flex items-center gap-2"
-              >
-                ← Return to Home
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <section className="w-full">
-          {match.iframe ? (
-            <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
-              <iframe
-                src={match.iframe}
-                title={match.title}
-                width="100%"
-                height="100%"
-                allowFullScreen
-                className="h-full w-full border-0"
-              />
-            </div>
-          ) : (
-            <div className="aspect-video w-full rounded-2xl border border-white/10 bg-black/50 flex items-center justify-center px-6 text-center text-slate-400">
-              This event does not currently have an embedded stream.
-            </div>
-          )}
-        </section>
-
-        {/* Footer Banner */}
+      <div className="relative h-[100dvh] w-full overflow-hidden bg-[#050505]">
         <div
-          className="relative bg-cover bg-center rounded-3xl overflow-hidden shadow-2xl p-6 md:p-10 border border-white/5 min-h-[250px] md:min-h-[300px] flex items-end select-none mt-8 group"
-          style={{ backgroundImage: `url(${backgroundImage})` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/50 to-transparent"></div>
-          <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/10 transition-colors duration-500 pointer-events-none"></div>
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+          style={{
+            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.12) 48%, rgba(0,0,0,.72)), url(${backgroundImage})`,
+            opacity: frameLoaded ? 0.28 : 1,
+          }}
+        />
 
-          <div className="relative z-10 flex flex-col items-center md:items-start justify-end w-full gap-2">
-            <h2 className="text-2xl md:text-4xl font-black mb-1 leading-tight tracking-tighter text-white drop-shadow-md">
-              {match.title}
-            </h2>
-            <p className="text-sm md:text-base text-slate-300 font-medium drop-shadow-sm flex items-center justify-center md:justify-start gap-3">
-              <span className="uppercase tracking-widest text-emerald-400 text-xs font-bold">
-                {match.category || "Match"}
-              </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-              <span>{formattedDate}</span>
+        {selectedLink && streamStarted && (
+          <iframe
+            key={selectedLink.id}
+            src={selectedLink.iframe}
+            title={`${match.title} - ${selectedLink.label}`}
+            allowFullScreen
+            onLoad={() => setFrameLoaded(true)}
+            className="absolute inset-0 z-0 h-full w-full border-0 bg-transparent"
+          />
+        )}
+
+        <header className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 bg-gradient-to-b from-black/80 to-transparent px-4 pb-12 pt-4 sm:px-7 sm:pt-6">
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            aria-label="Back to events"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-white/15"
+          >
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="m15 18-6-6 6-6M9 12h12" />
+            </svg>
+          </button>
+          <div className="min-w-0 flex-1 text-right">
+            <div className="mb-1 flex items-center justify-end gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-white/65">
               {isLive && (
-                <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/20"></span>
-                  <span className="bg-red-600 text-white text-xs px-2.5 py-1 rounded-md font-extrabold shadow-lg animate-pulse">
-                    LIVE
-                  </span>
-                </>
+                <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" />
               )}
-            </p>
+              <span>{match.category}</span>
+              <span className="text-white/30">/</span>
+              <span>{selectedLink?.label || "No feed available"}</span>
+            </div>
+            <h1 className="truncate text-lg font-bold text-white drop-shadow-md sm:text-2xl">
+              {match.title}
+            </h1>
+            <p className="mt-1 text-xs text-white/60">{formattedDate}</p>
           </div>
-        </div>
+        </header>
+
+        {!selectedLink && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-white/75">
+            No streaming links are available for this event.
+          </div>
+        )}
+
+        {selectedLink && !streamStarted && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
+            <div className="flex max-w-lg flex-col items-center">
+              <span className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/65">
+                {match.category}
+              </span>
+              <h2 className="mb-7 text-3xl font-black leading-tight text-white drop-shadow-lg sm:text-5xl">
+                {match.title}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setStreamStarted(true)}
+                className="flex min-h-14 items-center gap-3 rounded-full bg-emerald-400 px-7 text-sm font-black uppercase tracking-wider text-black shadow-[0_8px_36px_rgba(16,185,129,.28)] transition hover:scale-[1.03] hover:bg-emerald-300"
+              >
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Play Stream
+              </button>
+              <p className="mt-4 text-xs text-white/60">{selectedLink.label}</p>
+            </div>
+          </div>
+        )}
+
+        {streamStarted && !frameLoaded && selectedLink && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-emerald-400" />
+            <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/75">
+              Connecting to {selectedLink.label}
+            </span>
+          </div>
+        )}
+
+        <footer className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-4 pb-5 pt-16 sm:px-7 sm:pb-7">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
+                Available feeds
+              </p>
+              {match.streamLinks.length > 0 ? (
+                <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+                  {match.streamLinks.map((link, index) => {
+                    const active = selectedLink?.id === link.id;
+                    return (
+                      <button
+                        key={link.id}
+                        type="button"
+                        onClick={() => setSelectedLinkId(link.id)}
+                        aria-pressed={active}
+                        className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md border px-3 text-left transition ${active ? "border-emerald-300 bg-emerald-400 text-black" : "border-white/15 bg-black/55 text-white hover:bg-white/15"}`}
+                      >
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-full ${active ? "bg-black/10" : "bg-white/10"}`}
+                        >
+                          <svg
+                            className="h-3.5 w-3.5"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                          >
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
+                        <span className="flex flex-col">
+                          <span className="text-xs font-bold">
+                            {link.label || `Feed ${index + 1}`}
+                          </span>
+                          {link.locale && (
+                            <span
+                              className={`text-[10px] uppercase ${active ? "text-black/60" : "text-white/50"}`}
+                            >
+                              {link.locale}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-white/60">
+                  No feeds published for this event.
+                </p>
+              )}
+            </div>
+            <div className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-white/50">
+              {match.streamLinks.length}{" "}
+              {match.streamLinks.length === 1 ? "feed" : "feeds"}
+            </div>
+          </div>
+        </footer>
       </div>
     </MainLayout>
   );
