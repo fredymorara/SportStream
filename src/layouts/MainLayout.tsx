@@ -20,7 +20,13 @@ type CategoryId = "live" | "basketball" | "baseball" | "football" | "other";
 const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
   if (categoryId === "basketball") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
         <circle cx="12" cy="12" r="9" />
         <path d="M3 12h18M12 3v18M5.6 5.6c4.3 2.9 8.5 9.9 12.8 12.8M18.4 5.6C14.1 8.5 9.9 15.5 5.6 18.4" />
       </svg>
@@ -29,7 +35,13 @@ const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
 
   if (categoryId === "baseball") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
         <circle cx="12" cy="12" r="9" />
         <path d="M7 4.4c3 2 3 13.2 0 15.2M17 4.4c-3 2-3 13.2 0 15.2M5.8 7.1l1.5.8m-1 2.2 1.5.2m-1.5 2 1.5-.2m-1 2.2-1.5.8m12.9-8 .5-.8m-.5 3 .5-.2m-.5 2.2-.5-.2m.5 3 .5.8" />
       </svg>
@@ -38,7 +50,13 @@ const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
 
   if (categoryId === "football") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
         <circle cx="12" cy="12" r="9" />
         <path d="m12 6 3.5 2.5-1.3 4.1h-4.4L8.5 8.5 12 6Zm-2.2 6.6-3.1 2.3m9.5-2.3 3.1 2.3M8.5 8.5l-3.1-.6m10.1.6 3.1-.6M10 12.6l-1 4.1m5-4.1 1 4.1M8.5 16.7l-2.4 1.1m9.4-1.1 2.4 1.1" />
       </svg>
@@ -47,7 +65,13 @@ const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
 
   if (categoryId === "other") {
     return (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
         <rect x="4" y="4" width="6" height="6" rx="1" />
         <rect x="14" y="4" width="6" height="6" rx="1" />
         <rect x="4" y="14" width="6" height="6" rx="1" />
@@ -57,7 +81,13 @@ const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
   }
 
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      aria-hidden="true"
+    >
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
       <path d="M12 3a9 9 0 0 1 8.2 5.3M3.8 8.3A9 9 0 0 0 4 16m16-1a9 9 0 0 1-6.2 5.7" />
@@ -157,7 +187,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z" />
                 </svg>
               </span>
-              <span className="hidden text-lg font-black sm:inline">SportStream</span>
+              <span className="hidden text-lg font-black sm:inline">
+                SportStream
+              </span>
             </Link>
 
             <nav
@@ -243,7 +275,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
               </svg>
             </button>
-
           </div>
 
           <nav
