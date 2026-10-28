@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import type { APIMatch } from "../services/api";
@@ -19,9 +19,9 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     minute: "2-digit",
   });
 
-  const imageUrl = match.poster
-    ? api.getPosterUrl(match.poster)
-    : PLACEHOLDER_IMAGE_URL;
+  const imageSources = api.getPosterCandidates(match);
+  const [imageIndex, setImageIndex] = useState(0);
+  const imageUrl = imageSources[imageIndex] || PLACEHOLDER_IMAGE_URL;
   const sportName = match.category || "Match";
   const isLive = match.status?.toLowerCase() === "live";
 
@@ -31,15 +31,19 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
       onClick={() => navigate(`/watch/${encodeURIComponent(match.uriName)}`)}
     >
       {/* Thumbnail Container */}
-      <div className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-zinc-900 group-hover:border-white/25">
+      <div
+        className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-zinc-900 bg-cover bg-center group-hover:border-white/25"
+        style={{ backgroundImage: `url(${PLACEHOLDER_IMAGE_URL})` }}
+      >
         <img
           src={imageUrl}
           alt={`${match.title}`}
           className="h-full w-full object-cover"
           loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = PLACEHOLDER_IMAGE_URL;
+          onError={() => {
+            setImageIndex((index) =>
+              Math.min(index + 1, imageSources.length - 1),
+            );
           }}
         />
 

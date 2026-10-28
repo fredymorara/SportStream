@@ -23,7 +23,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
         aria-label="Loading"
         className="cardio-loader-scale flex items-center justify-center"
       >
-        <Cardio size={numericSize} stroke="4" speed="1" color={validColor} />
+        <Cardio size={numericSize} stroke="2" speed="1" color={validColor} />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ const SHELL_CACHE = "sportstream-shell-v1";
 const RUNTIME_CACHE = "sportstream-runtime-v1";
 const DATA_CACHE = "sportstream-data-v1";
 const STREAMS_CACHE_KEY = "https://api.ppv.st/api/streams";
+const STREAMFREE_CACHE_KEY = "https://streamfree.top/api/v1/streams";
 const APP_SHELL = [
   "/",
   "/index.html",
@@ -69,13 +70,18 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
 
   const url = new URL(request.url);
-  const isProviderStreamsRequest =
+  const isPpvStreamsRequest =
     url.pathname === "/api/streams" &&
     /^(api\.ppv\.st|ppv\.(st|tj|pk|rw|ms|bi|ug))$/.test(url.hostname);
-  if (isProviderStreamsRequest) {
+  const isStreamFreeStreamsRequest =
+    url.hostname === "streamfree.top" && url.pathname === "/api/v1/streams";
+  if (isPpvStreamsRequest || isStreamFreeStreamsRequest) {
+    const cacheKey = isStreamFreeStreamsRequest
+      ? STREAMFREE_CACHE_KEY
+      : STREAMS_CACHE_KEY;
     const refresh = caches.open(DATA_CACHE).then((cache) =>
       fetch(request).then((response) => {
-        if (response.ok) cache.put(STREAMS_CACHE_KEY, response.clone());
+        if (response.ok) cache.put(cacheKey, response.clone());
         return response;
       }),
     );
@@ -83,7 +89,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         const cache = await caches.open(DATA_CACHE);
-        const cached = await cache.match(STREAMS_CACHE_KEY);
+        const cached = await cache.match(cacheKey);
         if (cached) return cached;
         return refresh;
       })(),

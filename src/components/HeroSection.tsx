@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import type { APIMatch } from "../services/api";
@@ -11,6 +11,10 @@ const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
 const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
   const navigate = useNavigate();
+  const [failedImage, setFailedImage] = useState<{
+    matchId: string;
+    imageIndex: number;
+  } | null>(null);
 
   if (!featuredMatch) {
     return (
@@ -39,9 +43,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
     minute: "2-digit",
   });
 
-  const backgroundImage = featuredMatch.poster
-    ? api.getPosterUrl(featuredMatch.poster)
-    : PLACEHOLDER_IMAGE_URL;
+  const imageSources = api.getPosterCandidates(featuredMatch);
+  const imageIndex =
+    failedImage?.matchId === featuredMatch.id ? failedImage.imageIndex : 0;
+  const backgroundImage = imageSources[imageIndex] || PLACEHOLDER_IMAGE_URL;
   const isLive = featuredMatch.status?.toLowerCase() === "live";
 
   return (
@@ -57,9 +62,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
           src={backgroundImage}
           alt={featuredMatch.title}
           className="h-full w-full object-cover"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = PLACEHOLDER_IMAGE_URL;
+          onError={() => {
+            setFailedImage({
+              matchId: featuredMatch.id,
+              imageIndex: Math.min(imageIndex + 1, imageSources.length - 1),
+            });
           }}
         />
         <div className="absolute inset-0 bg-black/20"></div>

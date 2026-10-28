@@ -20,6 +20,10 @@ const PlayerPage: React.FC = () => {
   const [selectedLinkId, setSelectedLinkId] = useState("");
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [streamStarted, setStreamStarted] = useState(false);
+  const [failedPoster, setFailedPoster] = useState<{
+    matchId: string;
+    imageIndex: number;
+  } | null>(null);
 
   const match = useMemo(() => {
     return rawMatches.find((m) => m.uriName === matchId) || null;
@@ -37,7 +41,11 @@ const PlayerPage: React.FC = () => {
   }, [dispatch, rawMatches.length]);
 
   useEffect(() => {
-    setSelectedLinkId(match?.streamLinks[0]?.id || "");
+    setSelectedLinkId(
+      match?.streamLinks.find((link) => link.isLive)?.id ||
+        match?.streamLinks[0]?.id ||
+        "",
+    );
     setFrameLoaded(false);
   }, [match?.id]);
 
@@ -74,9 +82,11 @@ const PlayerPage: React.FC = () => {
     );
   }
 
-  const backgroundImage = match.poster
-    ? api.getPosterUrl(match.poster)
-    : PLACEHOLDER_IMAGE_URL;
+  const posterCandidates = api.getPosterCandidates(match);
+  const posterIndex =
+    failedPoster?.matchId === match.id ? failedPoster.imageIndex : 0;
+  const backgroundImage =
+    posterCandidates[posterIndex] || PLACEHOLDER_IMAGE_URL;
   const isLive = match.status === "live";
   const formattedDate = new Date(match.date).toLocaleString([], {
     weekday: "long",
@@ -114,13 +124,24 @@ const PlayerPage: React.FC = () => {
       </Helmet>
 
       <div className="relative h-[100dvh] w-full overflow-hidden bg-[#050505]">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-          style={{
-            backgroundImage: `linear-gradient(180deg, rgba(0,0,0,.2), rgba(0,0,0,.12) 48%, rgba(0,0,0,.72)), url(${backgroundImage})`,
-            opacity: frameLoaded ? 0.28 : 1,
-          }}
+        <img
+          key={backgroundImage}
+          src={backgroundImage}
+          alt=""
+          aria-hidden="true"
+          onError={() =>
+            setFailedPoster({
+              matchId: match.id,
+              imageIndex: Math.min(
+                posterIndex + 1,
+                posterCandidates.length - 1,
+              ),
+            })
+          }
+          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+          style={{ opacity: frameLoaded ? 0.28 : 1 }}
         />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/75" />
 
         {selectedLink && streamStarted && (
           <iframe
@@ -242,6 +263,13 @@ const PlayerPage: React.FC = () => {
                           <span className="text-xs font-bold">
                             {link.label || `Feed ${index + 1}`}
                           </span>
+                          {link.isLive !== undefined && (
+                            <span
+                              className={`text-[9px] font-black uppercase ${active ? "text-black/60" : link.isLive ? "text-emerald-300" : "text-amber-300"}`}
+                            >
+                              {link.isLive ? "Live" : "Waiting"}
+                            </span>
+                          )}
                           {link.locale && (
                             <span
                               className={`text-[10px] uppercase ${active ? "text-black/60" : "text-white/50"}`}
