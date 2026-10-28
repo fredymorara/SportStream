@@ -19,6 +19,13 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (min-width: 1024px) {
+  .cardio-loader-scale {
+    transform: scale(3);
+    transform-origin: center;
+  }
+}
+
 /* Minimalist aesthetics */
 .glass-panel {
   background: rgba(24, 24, 27, 0.6);

@@ -1,8 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setSearchQuery, setSelectedSport } from "../store/matchesSlice";
 import AdBanner from "../components/AdBanner";
+
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+}
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,6 +21,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   fullViewport = false,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(
+    null,
+  );
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -39,6 +47,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const updateSearch = (query: string) => {
     dispatch(setSearchQuery(query));
     if (location.pathname !== "/") navigate("/");
+  };
+
+  useEffect(() => {
+    const handleInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+    };
+    const handleInstalled = () => setInstallPrompt(null);
+
+    window.addEventListener("beforeinstallprompt", handleInstallPrompt);
+    window.addEventListener("appinstalled", handleInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleInstallPrompt);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+
+  const installApp = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
   };
 
   if (fullViewport) {
@@ -125,6 +155,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
             <button
               type="button"
+              onClick={installApp}
+              aria-label="Install SportStream"
+              title="Install SportStream"
+              className={`${installPrompt ? "flex" : "hidden"} h-11 w-11 shrink-0 items-center justify-center rounded-md border border-emerald-400/40 bg-emerald-400/10 text-emerald-300`}
+            >
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
               aria-label={
                 mobileMenuOpen
                   ? "Close navigation menu"
@@ -205,6 +254,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   className="h-11 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none"
                 />
               </label>
+              {installPrompt && (
+                <button
+                  type="button"
+                  onClick={installApp}
+                  className="mt-3 flex min-h-11 w-full items-center justify-center gap-2 rounded-md bg-emerald-400 px-4 text-sm font-bold text-black"
+                >
+                  Install SportStream
+                </button>
+              )}
             </div>
           )}
         </div>

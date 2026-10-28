@@ -67,6 +67,11 @@ const HomePage: React.FC = () => {
         match: (_m: APIMatch, isLive: boolean) => isLive,
       },
       {
+        id: "football",
+        name: "Football",
+        match: (m: APIMatch) => m.category?.toLowerCase() === "football",
+      },
+      {
         id: "basketball",
         name: "Basketball",
         match: (m: APIMatch) => m.category?.toLowerCase() === "basketball",
@@ -75,11 +80,6 @@ const HomePage: React.FC = () => {
         id: "baseball",
         name: "Baseball",
         match: (m: APIMatch) => m.category?.toLowerCase() === "baseball",
-      },
-      {
-        id: "football",
-        name: "Football",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "football",
       },
       {
         id: "other",

@@ -1,4 +1,6 @@
 import React from "react";
+import { Cardio } from "ldrs/react";
+import "ldrs/react/Cardio.css";
 
 interface LoadingSpinnerProps {
   size?: string;
@@ -6,22 +8,23 @@ interface LoadingSpinnerProps {
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  size = "50",
+  size = "500",
   color = "#10B981",
 }) => {
   // Ensure size is just numbers, otherwise default to 50
-  const numericSize = size.replace(/\D/g, "") || "50";
+  const numericSize = size.replace(/\D/g, "") || "500";
   // Ensure color is hex
   const validColor = color.startsWith("#") ? color : "#10B981";
 
   return (
     <div className="flex h-full w-full items-center justify-center p-4 min-h-[150px]">
-      {React.createElement("l-cardio", {
-        size: numericSize,
-        stroke: "4",
-        speed: "2",
-        color: validColor,
-      })}
+      <div
+        role="status"
+        aria-label="Loading"
+        className="cardio-loader-scale flex items-center justify-center"
+      >
+        <Cardio size={numericSize} stroke="4" speed="1" color={validColor} />
+      </div>
     </div>
   );
 };
