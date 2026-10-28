@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -14,12 +14,15 @@ const PlayerPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const playerSurfaceRef = useRef<HTMLDivElement>(null);
 
   const { rawMatches } = useAppSelector((state) => state.matches);
   const { loading, error } = useAppSelector((state) => state.matches);
   const [selectedLinkId, setSelectedLinkId] = useState("");
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [streamStarted, setStreamStarted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
   const [failedPoster, setFailedPoster] = useState<{
     matchId: string;
     imageIndex: number;
@@ -53,6 +56,58 @@ const PlayerPage: React.FC = () => {
     setFrameLoaded(false);
     setStreamStarted(false);
   }, [selectedLink?.id]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const fullscreenElement = document.fullscreenElement;
+      const playerSurface = playerSurfaceRef.current;
+      const fullscreen = Boolean(
+        fullscreenElement &&
+        playerSurface &&
+        (fullscreenElement === playerSurface ||
+          playerSurface.contains(fullscreenElement)),
+      );
+      setIsFullscreen(fullscreen);
+      if (!fullscreen) setControlsVisible(true);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+
+    let hideTimeout = window.setTimeout(() => setControlsVisible(false), 2200);
+    const revealControls = () => {
+      setControlsVisible(true);
+      window.clearTimeout(hideTimeout);
+      hideTimeout = window.setTimeout(() => setControlsVisible(false), 2200);
+    };
+
+    window.addEventListener("pointermove", revealControls);
+    window.addEventListener("wheel", revealControls, { passive: true });
+    window.addEventListener("touchstart", revealControls, { passive: true });
+    return () => {
+      window.clearTimeout(hideTimeout);
+      window.removeEventListener("pointermove", revealControls);
+      window.removeEventListener("wheel", revealControls);
+      window.removeEventListener("touchstart", revealControls);
+    };
+  }, [isFullscreen]);
+
+  const toggleFullscreen = async () => {
+    const playerSurface = playerSurfaceRef.current;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await playerSurface?.requestFullscreen();
+      }
+    } catch (fullscreenError) {
+      console.error("Unable to toggle player fullscreen:", fullscreenError);
+    }
+  };
 
   if (loading && rawMatches.length === 0) {
     return (
@@ -123,7 +178,16 @@ const PlayerPage: React.FC = () => {
         <meta name="twitter:image" content={backgroundImage} />
       </Helmet>
 
-      <div className="relative h-[100dvh] w-full overflow-hidden bg-[#050505]">
+      <div
+        ref={playerSurfaceRef}
+        className="relative h-[100dvh] w-full overflow-hidden bg-[#050505]"
+        onPointerMove={() => {
+          if (isFullscreen) setControlsVisible(true);
+        }}
+        onWheel={() => {
+          if (isFullscreen) setControlsVisible(true);
+        }}
+      >
         <img
           key={backgroundImage}
           src={backgroundImage}
@@ -141,25 +205,30 @@ const PlayerPage: React.FC = () => {
           className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
           style={{ opacity: frameLoaded ? 0.28 : 1 }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/75" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/75" />
 
         {selectedLink && streamStarted && (
           <iframe
             key={selectedLink.id}
             src={selectedLink.iframe}
             title={`${match.title} - ${selectedLink.label}`}
+            allow="fullscreen; picture-in-picture"
             allowFullScreen
             onLoad={() => setFrameLoaded(true)}
             className="absolute inset-0 z-0 h-full w-full border-0 bg-transparent"
           />
         )}
 
-        <header className="absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 bg-gradient-to-b from-black/80 to-transparent px-4 pb-12 pt-4 sm:px-7 sm:pt-6">
+        <header
+          className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 bg-gradient-to-b from-black/80 to-transparent px-4 pb-12 pt-4 transition-opacity duration-300 sm:px-7 sm:pt-6 ${controlsVisible ? "opacity-100" : "opacity-0"}`}
+          aria-hidden={!controlsVisible}
+          inert={!controlsVisible}
+        >
           <button
             type="button"
             onClick={() => navigate("/")}
             aria-label="Back to events"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-white/15"
+            className="pointer-events-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-white/15"
           >
             <svg
               className="h-5 w-5"
@@ -188,13 +257,13 @@ const PlayerPage: React.FC = () => {
         </header>
 
         {!selectedLink && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-white/75">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-white/75">
             No streaming links are available for this event.
           </div>
         )}
 
         {selectedLink && !streamStarted && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
             <div className="flex max-w-lg flex-col items-center">
               <span className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/65">
                 {match.category}
@@ -205,7 +274,7 @@ const PlayerPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setStreamStarted(true)}
-                className="flex min-h-14 items-center gap-3 rounded-full bg-emerald-400 px-7 text-sm font-black uppercase tracking-wider text-black shadow-[0_8px_36px_rgba(16,185,129,.28)] transition hover:scale-[1.03] hover:bg-emerald-300"
+                className="pointer-events-auto flex min-h-14 items-center gap-3 rounded-full bg-emerald-400 px-7 text-sm font-black uppercase tracking-wider text-black shadow-[0_8px_36px_rgba(16,185,129,.28)] transition hover:scale-[1.03] hover:bg-emerald-300"
               >
                 <svg
                   className="h-5 w-5"
@@ -230,14 +299,18 @@ const PlayerPage: React.FC = () => {
           </div>
         )}
 
-        <footer className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-4 pb-5 pt-16 sm:px-7 sm:pb-7">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <footer
+          className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-4 pb-5 pt-16 transition-opacity duration-300 sm:px-7 sm:pb-7 ${controlsVisible ? "opacity-100" : "opacity-0"}`}
+          aria-hidden={!controlsVisible}
+          inert={!controlsVisible}
+        >
+          <div className="flex flex-col gap-3 pr-14 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0">
               <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
                 Available feeds
               </p>
               {match.streamLinks.length > 0 ? (
-                <div className="flex max-w-full gap-2 overflow-x-auto pb-1">
+                <div className="pointer-events-auto flex max-w-full gap-2 overflow-x-auto pb-1">
                   {match.streamLinks.map((link, index) => {
                     const active = selectedLink?.id === link.id;
                     return (
@@ -294,6 +367,29 @@ const PlayerPage: React.FC = () => {
             </div>
           </div>
         </footer>
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          aria-pressed={isFullscreen}
+          title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+          className="pointer-events-auto absolute bottom-5 right-4 z-30 flex h-11 w-11 items-center justify-center bg-transparent text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] hover:text-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300 sm:bottom-7 sm:right-7"
+        >
+          <svg
+            className="h-5 w-5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden="true"
+          >
+            {isFullscreen ? (
+              <path d="M8 3v5H3m13-5v5h5M3 16h5v5m8-5h5v5" />
+            ) : (
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" />
+            )}
+          </svg>
+        </button>
       </div>
     </MainLayout>
   );
