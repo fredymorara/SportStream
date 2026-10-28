@@ -191,9 +191,15 @@ const HomePage: React.FC = () => {
   }, [filteredMatches, categoryDefinitions, selectedSport, currentTime]);
 
   const featuredMatch = useMemo(() => {
+    const isHeroEligible = (match: APIMatch) =>
+      !/red\s*zone/i.test(
+        [match.title, match.uriName, match.tag || ""].join(" "),
+      );
+
     const footballEvents = rawMatches
       .filter(
         (match) =>
+          isHeroEligible(match) &&
           match.category?.trim().toLowerCase() === "football" &&
           (match.status !== "ended" || match.allowPastStreams),
       )
@@ -207,12 +213,13 @@ const HomePage: React.FC = () => {
       });
     if (footballEvents.length > 0) return footballEvents[0];
 
-    const liveAny = filteredMatches.find((m) => {
+    const heroEligibleMatches = filteredMatches.filter(isHeroEligible);
+    const liveAny = heroEligibleMatches.find((m) => {
       return m.status === "live";
     });
     if (liveAny) return liveAny;
 
-    if (filteredMatches.length > 0) return filteredMatches[0];
+    if (heroEligibleMatches.length > 0) return heroEligibleMatches[0];
     return null;
   }, [rawMatches, filteredMatches, currentTime]);
 
