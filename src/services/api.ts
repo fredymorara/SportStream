@@ -203,10 +203,17 @@ const toMatch = (
   };
 };
 
+const HIDDEN_STREAM_URI_NAMES = new Set(["247-cows"]);
+
 export const api = {
   getAllMatches: async (): Promise<APIMatch[]> =>
     (await getStreamCategories()).flatMap((category) =>
-      (category.streams || []).map((stream) => toMatch(stream, category)),
+      (category.streams || [])
+        .filter(
+          (stream) =>
+            !HIDDEN_STREAM_URI_NAMES.has(stream.uri_name.toLowerCase()),
+        )
+        .map((stream) => toMatch(stream, category)),
     ),
 
   getPosterUrl: (poster?: string) => poster || "/sports_placeholder.png",

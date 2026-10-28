@@ -7,8 +7,7 @@ interface HeroSectionProps {
   featuredMatch: APIMatch | null;
 }
 
-const PLACEHOLDER_IMAGE_URL =
-  "https://via.placeholder.com/1200x400?text=Featured+Match";
+const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
 const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
   const navigate = useNavigate();
@@ -58,6 +57,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
           src={backgroundImage}
           alt={featuredMatch.title}
           className="h-full w-full object-cover"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = PLACEHOLDER_IMAGE_URL;
+          }}
         />
         <div className="absolute inset-0 bg-black/20"></div>
 

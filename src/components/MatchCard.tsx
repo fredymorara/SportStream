@@ -37,6 +37,10 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
           alt={`${match.title}`}
           className="h-full w-full object-cover"
           loading="lazy"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = PLACEHOLDER_IMAGE_URL;
+          }}
         />
 
         {/* Play Button Overlay */}
