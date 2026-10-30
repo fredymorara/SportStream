@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import type { APIMatch } from "../services/api";
+import { formatEventDate } from "../utils/formatDate";
 
 interface HeroSectionProps {
   featuredMatch: APIMatch | null;
@@ -11,6 +12,7 @@ const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
 const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [failedImage, setFailedImage] = useState<{
     matchId: string;
     imageIndex: number;
@@ -35,13 +37,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
     );
   }
 
-  const formattedDate = new Date(featuredMatch.date).toLocaleString([], {
+  const formattedDate = formatEventDate(featuredMatch.date, {
     weekday: "long",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
+  const openMatch = () =>
+    navigate(
+      `/watch/${encodeURIComponent(featuredMatch.uriName)}${location.search}`,
+    );
 
   const imageSources = api.getPosterCandidates(featuredMatch);
   const imageIndex =
@@ -58,7 +60,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
         tabIndex={0}
         aria-label={`Watch ${featuredMatch.title}`}
         onClick={() =>
-          navigate(`/watch/${encodeURIComponent(featuredMatch.uriName)}`)
+          openMatch()
         }
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -72,10 +74,12 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
           alt={featuredMatch.title}
           className="h-full w-full object-cover"
           onError={() => {
-            setFailedImage({
-              matchId: featuredMatch.id,
-              imageIndex: Math.min(imageIndex + 1, imageSources.length - 1),
-            });
+            if (imageIndex < imageSources.length - 1) {
+              setFailedImage({
+                matchId: featuredMatch.id,
+                imageIndex: imageIndex + 1,
+              });
+            }
           }}
         />
         <div className="absolute inset-0 bg-black/20"></div>
@@ -121,7 +125,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
           <button
             className="flex-1 bg-emerald-500 text-black font-semibold py-3 px-6 rounded-md hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
             onClick={() =>
-              navigate(`/watch/${encodeURIComponent(featuredMatch.uriName)}`)
+              openMatch()
             }
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

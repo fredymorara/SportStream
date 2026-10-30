@@ -118,8 +118,14 @@ const normalizeDomain = (domain: string) => {
   return withProtocol.replace(/\/+$/, "");
 };
 
-const fetchJson = async <T>(url: string): Promise<T> => {
-  const response = await fetch(url);
+const fetchJson = async <T>(
+  url: string,
+  options?: RequestInit,
+): Promise<T> => {
+  const response = await fetch(url, {
+    cache: "no-store",
+    ...options,
+  });
   if (!response.ok) {
     throw new Error(`API Error: ${response.status} ${response.statusText}`);
   }
@@ -140,13 +146,20 @@ const getApiDomains = () => {
   return domainsPromise;
 };
 
-const fetchFromAvailableDomain = async <T>(path: string): Promise<T> => {
+const fetchFromAvailableDomain = async <T>(
+  path: string,
+  forceRefresh = false,
+): Promise<T> => {
   const domains = await getApiDomains();
   let lastError: unknown;
 
   for (const domain of domains) {
     try {
-      const response = await fetchJson<T>(`${domain}${path}`);
+      const response = await fetchJson<T>(
+        forceRefresh
+          ? `${domain}${path}${path.includes("?") ? "&" : "?"}_refresh=${Date.now()}`
+          : `${domain}${path}`,
+      );
       if (
         response &&
         typeof response === "object" &&
@@ -172,11 +185,20 @@ let cachedCategories: StreamCategory[] | null = null;
 let cacheExpiresAt = 0;
 let categoriesPromise: Promise<StreamCategory[]> | null = null;
 
-const getStreamCategories = async () => {
-  if (cachedCategories && Date.now() < cacheExpiresAt) return cachedCategories;
+const getStreamCategories = async (forceRefresh = false) => {
+  if (
+    !forceRefresh &&
+    cachedCategories &&
+    Date.now() < cacheExpiresAt
+  ) {
+    return cachedCategories;
+  }
   if (categoriesPromise) return categoriesPromise;
 
-  categoriesPromise = fetchFromAvailableDomain<StreamsResponse>("/api/streams")
+  categoriesPromise = fetchFromAvailableDomain<StreamsResponse>(
+    "/api/streams",
+    forceRefresh,
+  )
     .then((response) => {
       if (!response.success || !Array.isArray(response.streams)) {
         throw new Error("The streams API returned an invalid response.");
@@ -244,14 +266,20 @@ const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
   };
 };
 
-const getStreamFreeMatches = async (): Promise<APIMatch[]> => {
-  if (cachedStreamFreeMatches && Date.now() < streamFreeCacheExpiresAt) {
+const getStreamFreeMatches = async (
+  forceRefresh = false,
+): Promise<APIMatch[]> => {
+  if (
+    !forceRefresh &&
+    cachedStreamFreeMatches &&
+    Date.now() < streamFreeCacheExpiresAt
+  ) {
     return cachedStreamFreeMatches;
   }
   if (streamFreeMatchesPromise) return streamFreeMatchesPromise;
 
   streamFreeMatchesPromise = fetchJson<StreamFreeResponse>(
-    `${STREAMFREE_API_URL}/streams`,
+    `${STREAMFREE_API_URL}/streams${forceRefresh ? `?_refresh=${Date.now()}` : ""}`,
   )
     .then((response) => {
       if (!Array.isArray(response.streams)) {
@@ -337,7 +365,19 @@ const getPosterCandidates = (
       ...(match.posterFallbacks || []),
       "/sports_placeholder.png",
     ]),
-  ].filter((poster): poster is string => Boolean(poster));
+  ].filter((poster): poster is string => {
+    if (!poster) return false;
+    if (poster.startsWith("/")) return true;
+    try {
+      const url = new URL(poster);
+      return (
+        (url.protocol === "http:" || url.protocol === "https:") &&
+        Boolean(url.hostname)
+      );
+    } catch {
+      return false;
+    }
+  });
 
 const mergeProviderMatches = (
   ppvMatches: APIMatch[],
@@ -389,9 +429,9 @@ const mergeProviderMatches = (
 };
 
 export const api = {
-  getAllMatches: async (): Promise<APIMatch[]> => {
+  getAllMatches: async (forceRefresh = false): Promise<APIMatch[]> => {
     const [ppvResult, streamFreeResult] = await Promise.allSettled([
-      getStreamCategories().then((categories) =>
+      getStreamCategories(forceRefresh).then((categories) =>
         categories.flatMap((category) =>
           (category.streams || [])
             .filter(
@@ -401,7 +441,7 @@ export const api = {
             .map((stream) => toMatch(stream, category)),
         ),
       ),
-      getStreamFreeMatches(),
+      getStreamFreeMatches(forceRefresh),
     ]);
 
     const ppvMatches = ppvResult.status === "fulfilled" ? ppvResult.value : [];

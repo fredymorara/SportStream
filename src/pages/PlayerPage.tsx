@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchMatchesByStatus } from "../store/matchesSlice";
 import { api } from "../services/api";
+import { formatEventDate } from "../utils/formatDate";
 
 const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
@@ -13,6 +14,7 @@ import { Helmet } from "react-helmet-async";
 const PlayerPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const playerSurfaceRef = useRef<HTMLDivElement>(null);
 
@@ -39,22 +41,28 @@ const PlayerPage: React.FC = () => {
 
   useEffect(() => {
     if (rawMatches.length === 0) {
-      dispatch(fetchMatchesByStatus("all"));
+      dispatch(fetchMatchesByStatus({ status: "all", forceRefresh: true }));
     }
   }, [dispatch, rawMatches.length]);
 
   useEffect(() => {
-    setSelectedLinkId(
-      match?.streamLinks.find((link) => link.isLive)?.id ||
-        match?.streamLinks[0]?.id ||
-        "",
-    );
-    setFrameLoaded(false);
-  }, [match?.id]);
+    const resetSelection = window.setTimeout(() => {
+      setSelectedLinkId(
+        match?.streamLinks.find((link) => link.isLive)?.id ||
+          match?.streamLinks[0]?.id ||
+          "",
+      );
+      setFrameLoaded(false);
+    }, 0);
+    return () => window.clearTimeout(resetSelection);
+  }, [match?.id, match?.streamLinks]);
 
   useEffect(() => {
-    setFrameLoaded(false);
-    setStreamStarted(false);
+    const resetPlayer = window.setTimeout(() => {
+      setFrameLoaded(false);
+      setStreamStarted(false);
+    }, 0);
+    return () => window.clearTimeout(resetPlayer);
   }, [selectedLink?.id]);
 
   useEffect(() => {
@@ -127,7 +135,7 @@ const PlayerPage: React.FC = () => {
             Match not found or streams failed to load.
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate(`/${location.search}`)}
             className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black tracking-wide py-3 px-6 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300 hover:scale-105"
           >
             RETURN TO HOME
@@ -143,12 +151,8 @@ const PlayerPage: React.FC = () => {
   const backgroundImage =
     posterCandidates[posterIndex] || PLACEHOLDER_IMAGE_URL;
   const isLive = match.status === "live";
-  const formattedDate = new Date(match.date).toLocaleString([], {
+  const formattedDate = formatEventDate(match.date, {
     weekday: "long",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
   });
 
   return (
@@ -193,15 +197,14 @@ const PlayerPage: React.FC = () => {
           src={backgroundImage}
           alt=""
           aria-hidden="true"
-          onError={() =>
-            setFailedPoster({
-              matchId: match.id,
-              imageIndex: Math.min(
-                posterIndex + 1,
-                posterCandidates.length - 1,
-              ),
-            })
-          }
+          onError={() => {
+            if (posterIndex < posterCandidates.length - 1) {
+              setFailedPoster({
+                matchId: match.id,
+                imageIndex: posterIndex + 1,
+              });
+            }
+          }}
           className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
           style={{ opacity: frameLoaded ? 0.28 : 1 }}
         />
@@ -226,7 +229,7 @@ const PlayerPage: React.FC = () => {
         >
           <button
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate(`/${location.search}`)}
             aria-label="Back to events"
             className="pointer-events-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-white/15"
           >

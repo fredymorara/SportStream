@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import type { APIMatch } from "../services/api";
+import { formatEventDate } from "../utils/formatDate";
 
 interface MatchCardProps {
   match: APIMatch;
@@ -11,31 +12,29 @@ const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
 const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const formattedDate = new Date(match.date).toLocaleString([], {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const formattedDate = formatEventDate(match.date);
 
   const imageSources = api.getPosterCandidates(match);
   const [imageIndex, setImageIndex] = useState(0);
   const imageUrl = imageSources[imageIndex] || PLACEHOLDER_IMAGE_URL;
+  const openMatch = () =>
+    navigate(`/watch/${encodeURIComponent(match.uriName)}${location.search}`);
   const sportName = match.category || "Match";
   const isLive = match.status?.toLowerCase() === "live";
 
   return (
     <div
-      className="group cursor-pointer flex flex-col gap-3 w-full"
+      className="group min-w-0 w-full cursor-pointer touch-manipulation flex flex-col gap-3"
       role="button"
       tabIndex={0}
       aria-label={`Watch ${match.title}`}
-      onClick={() => navigate(`/watch/${encodeURIComponent(match.uriName)}`)}
+      onClick={openMatch}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          navigate(`/watch/${encodeURIComponent(match.uriName)}`);
+          openMatch();
         }
       }}
     >
@@ -49,11 +48,12 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
           alt={`${match.title}`}
           className="h-full w-full object-cover"
           loading="lazy"
-          onError={() => {
+          decoding="async"
+          onError={() =>
             setImageIndex((index) =>
-              Math.min(index + 1, imageSources.length - 1),
-            );
-          }}
+              index < imageSources.length - 1 ? index + 1 : index,
+            )
+          }
         />
 
         {/* Play Button Overlay */}
@@ -86,14 +86,14 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
       {/* Details Container (below image) */}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
           <span className={isLive ? "text-red-400" : "text-zinc-400"}>
             {sportName}
           </span>
           <span>•</span>
           <span>{formattedDate}</span>
         </div>
-        <h3 className="text-white text-sm sm:text-base font-bold leading-snug line-clamp-2 group-hover:text-blue-300">
+        <h3 className="text-pretty break-words text-sm font-bold leading-snug text-white group-hover:text-blue-300 sm:text-base">
           {match.title}
         </h3>
       </div>
@@ -101,4 +101,4 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   );
 };
 
-export default MatchCard;
+export default React.memo(MatchCard);

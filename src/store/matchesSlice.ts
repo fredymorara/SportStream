@@ -6,11 +6,16 @@ import type { RootState } from "./index";
 
 export const fetchMatchesByStatus = createAsyncThunk(
   "matches/fetchByStatus",
-  async (_status: string, { rejectWithValue }) => {
+  async (
+    request: { status: string; forceRefresh?: boolean },
+    { rejectWithValue },
+  ) => {
     try {
-      return await api.getAllMatches();
-    } catch (err: any) {
-      return rejectWithValue(err.message || "Failed to fetch matches.");
+      return await api.getAllMatches(request.forceRefresh);
+    } catch (err: unknown) {
+      return rejectWithValue(
+        err instanceof Error ? err.message : "Failed to fetch matches.",
+      );
     }
   },
 );
@@ -19,6 +24,7 @@ interface MatchesState {
   rawMatches: APIMatch[];
   loading: boolean;
   error: string | null;
+  lastUpdated: number | null;
   selectedStatus: string;
   selectedSport: string;
   sortBy: "date" | "sport";
@@ -30,6 +36,7 @@ const initialState: MatchesState = {
   rawMatches: [],
   loading: false,
   error: null,
+  lastUpdated: null,
   selectedStatus: "all",
   selectedSport: "all",
   sortBy: "date",
@@ -68,11 +75,15 @@ const matchesSlice = createSlice({
         (state, action: PayloadAction<APIMatch[]>) => {
           state.loading = false;
           state.rawMatches = action.payload;
+          state.lastUpdated = Date.now();
         },
       )
-      .addCase(fetchMatchesByStatus.rejected, (state, action: any) => {
+      .addCase(fetchMatchesByStatus.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error =
+          typeof action.payload === "string"
+            ? action.payload
+            : action.error.message || "Failed to fetch matches.";
       });
   },
 });

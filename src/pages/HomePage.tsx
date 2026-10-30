@@ -6,24 +6,39 @@ import LoadingSpinner from "../components/LoadingSpinner";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchMatchesByStatus } from "../store/matchesSlice";
 import type { APIMatch } from "../services/api";
+import { formatEventDate } from "../utils/formatDate";
 
 import { Helmet } from "react-helmet-async";
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
 
-  const { rawMatches, loading, error, selectedSport, searchQuery } =
+  const {
+    rawMatches,
+    loading,
+    error,
+    lastUpdated,
+    selectedSport,
+    searchQuery,
+  } =
     useAppSelector((state) => state.matches);
 
   useEffect(() => {
-    dispatch(fetchMatchesByStatus("all"));
-    const refreshInterval = window.setInterval(() => {
-      dispatch(fetchMatchesByStatus("all"));
-    }, 60_000);
-    return () => window.clearInterval(refreshInterval);
+    const refresh = () =>
+      dispatch(fetchMatchesByStatus({ status: "all", forceRefresh: true }));
+    refresh();
+    const refreshInterval = window.setInterval(refresh, 60_000);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.clearInterval(refreshInterval);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [dispatch]);
-
-  const currentTime = Date.now();
 
   // Filter matches within Today & Tomorrow time window + match toolbar flags + search text
   const filteredMatches = useMemo(() => {
@@ -56,7 +71,7 @@ const HomePage: React.FC = () => {
     }
 
     return filtered;
-  }, [rawMatches, searchQuery, currentTime]);
+  }, [rawMatches, searchQuery]);
 
   // Categories definitions exactly as requested
   const categoryDefinitions = useMemo(
@@ -65,6 +80,11 @@ const HomePage: React.FC = () => {
         id: "live",
         name: "Live Now",
         match: (_m: APIMatch, isLive: boolean) => isLive,
+      },
+      {
+        id: "upcoming",
+        name: "Upcoming",
+        match: (m: APIMatch) => m.status === "upcoming",
       },
       {
         id: "football",
@@ -93,9 +113,12 @@ const HomePage: React.FC = () => {
 
   const categorizedSections = useMemo(() => {
     const matchedInCategoriesMatchIds = new Set<string>();
+    const sortByStartTime = (a: APIMatch, b: APIMatch) => a.date - b.date;
 
     const sportSections = categoryDefinitions
-      .filter((catDef) => catDef.id !== "other")
+      .filter(
+        (catDef) => catDef.id !== "other" && catDef.id !== "upcoming",
+      )
       .map((catDef) => {
         const matches = filteredMatches.filter((m) => {
           const isLive = m.status === "live";
@@ -118,24 +141,8 @@ const HomePage: React.FC = () => {
           }
         });
 
-        live.sort((a, b) => {
-          if (catDef.id === "live") {
-            const aIsFootball = a.category?.toLowerCase() === "football";
-            const bIsFootball = b.category?.toLowerCase() === "football";
-            if (aIsFootball && !bIsFootball) return -1;
-            if (!aIsFootball && bIsFootball) return 1;
-          }
-          return a.date - b.date;
-        });
-        upcoming.sort((a, b) => {
-          if (catDef.id === "live") {
-            const aIsFootball = a.category?.toLowerCase() === "football";
-            const bIsFootball = b.category?.toLowerCase() === "football";
-            if (aIsFootball && !bIsFootball) return -1;
-            if (!aIsFootball && bIsFootball) return 1;
-          }
-          return a.date - b.date;
-        });
+        live.sort(sortByStartTime);
+        upcoming.sort(sortByStartTime);
 
         return {
           ...catDef,
@@ -167,21 +174,34 @@ const HomePage: React.FC = () => {
         }
       });
 
-      live.sort((a, b) => a.date - b.date);
-      upcoming.sort((a, b) => a.date - b.date);
+      live.sort(sortByStartTime);
+      upcoming.sort(sortByStartTime);
       otherSection.matches = [...live, ...upcoming];
     }
+
+    const upcomingSection = {
+      id: "upcoming",
+      name: "Upcoming",
+      matches: filteredMatches
+        .filter((match) => match.status === "upcoming")
+        .sort(sortByStartTime),
+    };
 
     const sections = otherSection
       ? [...sportSections, otherSection]
       : sportSections;
 
-    if (selectedSport !== "all") {
-      return sections.filter((sec) => sec.id === selectedSport);
-    }
+    const visibleSections =
+      selectedSport === "upcoming"
+        ? upcomingSection.matches.length > 0
+          ? [upcomingSection]
+          : []
+        : selectedSport !== "all"
+          ? sections.filter((sec) => sec.id === selectedSport)
+          : sections.filter((sec) => sec.matches.length > 0);
 
-    return sections.filter((sec) => sec.matches.length > 0);
-  }, [filteredMatches, categoryDefinitions, selectedSport, currentTime]);
+    return visibleSections;
+  }, [filteredMatches, categoryDefinitions, selectedSport]);
 
   const featuredMatch = useMemo(() => {
     const isHeroEligible = (match: APIMatch) =>
@@ -214,9 +234,9 @@ const HomePage: React.FC = () => {
 
     if (heroEligibleMatches.length > 0) return heroEligibleMatches[0];
     return null;
-  }, [rawMatches, filteredMatches, currentTime]);
+  }, [rawMatches, filteredMatches]);
 
-  if (loading) {
+  if (loading && rawMatches.length === 0) {
     return (
       <MainLayout>
         <div className="flex min-h-[70vh] flex-col items-center justify-center">
@@ -226,7 +246,7 @@ const HomePage: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && rawMatches.length === 0) {
     return (
       <MainLayout>
         <div className="mt-8 flex min-h-[40vh] flex-col items-center justify-center border-t border-white/5 py-16 text-center">
@@ -249,6 +269,17 @@ const HomePage: React.FC = () => {
             Failed to load content
           </p>
           <p className="text-zinc-500 text-sm">{error}</p>
+          <button
+            type="button"
+            onClick={() =>
+              dispatch(
+                fetchMatchesByStatus({ status: "all", forceRefresh: true }),
+              )
+            }
+            className="mt-6 rounded-md bg-emerald-400 px-5 py-2.5 text-sm font-bold text-black transition hover:bg-emerald-300"
+          >
+            Try again
+          </button>
         </div>
       </MainLayout>
     );
@@ -282,15 +313,48 @@ const HomePage: React.FC = () => {
         />
       </Helmet>
 
+      {error && rawMatches.length > 0 && (
+        <div
+          role="status"
+          className="mb-8 flex flex-col gap-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <p className="font-semibold">Showing the last available events.</p>
+            <p className="mt-1 text-xs text-amber-100/70">
+              {lastUpdated
+                ? `Last updated ${formatEventDate(lastUpdated, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}. ${error}`
+                : error}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() =>
+              dispatch(
+                fetchMatchesByStatus({ status: "all", forceRefresh: true }),
+              )
+            }
+            className="w-fit rounded-md border border-amber-200/30 px-4 py-2 text-xs font-bold text-amber-50 transition hover:bg-amber-100/10"
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
       {selectedSport === "all" ? (
         <HeroSection featuredMatch={featuredMatch} />
       ) : (
         <section className="mb-10 border-b border-white/10 pb-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <h1 className="max-w-[14ch] text-balance text-5xl font-black leading-[0.95] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">
                 {selectedSport === "live"
                   ? "Live now"
+                  : selectedSport === "upcoming"
+                    ? "Upcoming events"
                   : selectedSport === "other"
                     ? "Other sports"
                     : `${selectedSport.charAt(0).toUpperCase()}${selectedSport.slice(1)} events`}
@@ -298,6 +362,8 @@ const HomePage: React.FC = () => {
               <p className="mt-2 max-w-2xl text-sm text-zinc-400">
                 {selectedSport === "live"
                   ? "Follow every event currently in progress."
+                  : selectedSport === "upcoming"
+                    ? "See what is starting next, ordered by the nearest start time."
                   : `Browse live and upcoming ${selectedSport === "other" ? "sports" : selectedSport} events in one place.`}
               </p>
             </div>
@@ -336,7 +402,9 @@ const HomePage: React.FC = () => {
             </svg>
           </div>
           <p className="text-white font-semibold text-xl mb-2">
-            No matches found
+            {selectedSport === "all"
+              ? "No matches found"
+              : `No ${selectedSport === "other" ? "other sports" : selectedSport} events right now`}
           </p>
           <p className="text-zinc-500 text-sm">
             Try adjusting your search criteria or checking back later.

@@ -12,13 +12,13 @@ interface MatchGridProps {
 
 const MatchGrid: React.FC<MatchGridProps> = ({ section }) => {
   return (
-    <div className="mb-12">
+    <div className="match-grid-section mb-12">
       {/* Clean Category Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <h3 className="text-xl md:text-2xl font-bold text-white">
+      <div className="mb-7 flex items-end gap-4 border-b border-white/10 pb-4">
+        <h3 className="text-balance text-2xl font-black leading-none tracking-[-0.03em] text-white sm:text-3xl lg:text-4xl">
           {section.name}
         </h3>
-        <span className="text-xs font-semibold text-zinc-500 bg-zinc-900 px-2 py-0.5 rounded-full border border-white/10">
+        <span className="mb-1 rounded-full border border-white/10 bg-zinc-900 px-2.5 py-1 text-xs font-semibold text-zinc-400">
           {section.matches.length}
         </span>
       </div>
@@ -33,4 +33,4 @@ const MatchGrid: React.FC<MatchGridProps> = ({ section }) => {
   );
 };
 
-export default MatchGrid;
+export default React.memo(MatchGrid);

@@ -43,6 +43,11 @@ input:focus-visible,
   outline-offset: 3px;
 }
 
+.search-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
 @media (min-width: 1024px) {
   .cardio-loader-scale {
     transform: scale(3);
@@ -56,6 +61,15 @@ input:focus-visible,
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-grid-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 520px;
+}
+
+.mobile-category-nav {
+  padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
 }
 
 /* Hide scrollbars but keep functionality */

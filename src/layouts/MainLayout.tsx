@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setSearchQuery, setSelectedSport } from "../store/matchesSlice";
 import AdBanner from "../components/AdBanner";
@@ -18,6 +23,7 @@ interface MainLayoutProps {
 type CategoryId =
   | "home"
   | "live"
+  | "upcoming"
   | "basketball"
   | "baseball"
   | "football"
@@ -83,6 +89,21 @@ const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
     );
   }
 
+  if (categoryId === "upcoming") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    );
+  }
+
   if (categoryId === "other") {
     return (
       <svg
@@ -126,6 +147,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { searchQuery, selectedSport } = useAppSelector(
     (state) => state.matches,
   );
@@ -133,23 +155,41 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: "home" as const, name: "Home" },
     { id: "football" as const, name: "Football" },
     { id: "live" as const, name: "Live Now" },
+    { id: "upcoming" as const, name: "Upcoming" },
     { id: "basketball" as const, name: "Basketball" },
-    { id: "baseball" as const, name: "Baseball" },
     { id: "other" as const, name: "Others" },
   ];
 
+  useEffect(() => {
+    const urlSport = searchParams.get("sport") || "all";
+    const urlQuery = searchParams.get("q") || "";
+    if (urlSport !== selectedSport) dispatch(setSelectedSport(urlSport));
+    if (urlQuery !== searchQuery) dispatch(setSearchQuery(urlQuery));
+  }, [dispatch, searchParams, selectedSport, searchQuery]);
+
+  const updateUrl = (sport: string, query: string) => {
+    const nextParams = new URLSearchParams();
+    if (sport !== "all") nextParams.set("sport", sport);
+    if (query.trim()) nextParams.set("q", query.trim());
+    setSearchParams(nextParams, { replace: true });
+  };
+
   const selectCategory = (categoryId: string) => {
-    dispatch(setSelectedSport(categoryId === "home" ? "all" : categoryId));
+    const nextSport = categoryId === "home" ? "all" : categoryId;
+    dispatch(setSelectedSport(nextSport));
+    updateUrl(nextSport, searchQuery);
     if (location.pathname !== "/") navigate("/");
   };
 
   const goHome = () => {
     dispatch(setSelectedSport("all"));
     dispatch(setSearchQuery(""));
+    setSearchParams({}, { replace: true });
   };
 
   const updateSearch = (query: string) => {
     dispatch(setSearchQuery(query));
+    updateUrl(selectedSport, query);
     if (location.pathname !== "/") navigate("/");
   };
 
@@ -265,7 +305,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-emerald-400 focus:bg-white/[0.08] focus:outline-none"
+                className="search-input h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
@@ -289,7 +329,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-emerald-400 focus:bg-white/[0.08] focus:outline-none"
+                className="search-input h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
@@ -315,7 +355,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
           <nav
             aria-label="Sports categories"
-            className="grid grid-cols-6 border-t border-white/10 py-1 lg:hidden"
+            className="mobile-category-nav grid grid-cols-6 border-t border-white/10 pt-1 lg:hidden"
           >
             {categories.map((category) => (
               <button
@@ -329,7 +369,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     : selectedSport === category.id
                 }
                 onClick={() => selectCategory(category.id)}
-                className={`flex min-h-12 min-w-0 items-center justify-center rounded-md px-2 transition-colors sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "text-emerald-300" : "text-zinc-400"}`}
+                className={`flex min-h-12 min-w-0 touch-manipulation items-center justify-center rounded-md px-2 transition-colors focus-visible:bg-white/10 sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "bg-emerald-400/10 text-emerald-300" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`}
               >
                 <span className="h-5 w-5 shrink-0">
                   <CategoryIcon categoryId={category.id} />
@@ -344,10 +384,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       </header>
 
       <main className="relative z-10 mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-        <div className="select-none">
-          <AdBanner position="top" active={topAdActive} />
-          {children}
-        </div>
+        <AdBanner position="top" active={topAdActive} />
+        {children}
       </main>
     </div>
   );

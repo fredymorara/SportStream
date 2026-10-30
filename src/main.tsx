@@ -18,8 +18,12 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   navigator.serviceWorker
-    .register("/sw.js")
+    .register("/sw.js", { updateViaCache: "none" })
     .then(async () => {
+      await navigator.serviceWorker.ready;
+      await navigator.serviceWorker.getRegistration().then((registration) =>
+        registration?.update(),
+      );
       const registration = await navigator.serviceWorker.ready;
       const assets = Array.from(
         document.querySelectorAll<HTMLScriptElement | HTMLLinkElement>(
