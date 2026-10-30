@@ -15,9 +15,29 @@ interface MainLayoutProps {
   fullViewport?: boolean;
 }
 
-type CategoryId = "live" | "basketball" | "baseball" | "football" | "other";
+type CategoryId =
+  | "home"
+  | "live"
+  | "basketball"
+  | "baseball"
+  | "football"
+  | "other";
 
 const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
+  if (categoryId === "home") {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        aria-hidden="true"
+      >
+        <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" />
+      </svg>
+    );
+  }
+
   if (categoryId === "basketball") {
     return (
       <svg
@@ -110,16 +130,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     (state) => state.matches,
   );
   const categories = [
+    { id: "home" as const, name: "Home" },
+    { id: "football" as const, name: "Football" },
     { id: "live" as const, name: "Live Now" },
     { id: "basketball" as const, name: "Basketball" },
     { id: "baseball" as const, name: "Baseball" },
-    { id: "football" as const, name: "Football" },
     { id: "other" as const, name: "Others" },
   ];
 
   const selectCategory = (categoryId: string) => {
-    dispatch(setSelectedSport(categoryId));
+    dispatch(setSelectedSport(categoryId === "home" ? "all" : categoryId));
     if (location.pathname !== "/") navigate("/");
+  };
+
+  const goHome = () => {
+    dispatch(setSelectedSport("all"));
+    dispatch(setSearchQuery(""));
   };
 
   const updateSearch = (query: string) => {
@@ -169,11 +195,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             "linear-gradient(rgba(0, 0, 0, .66), rgba(0, 0, 0, .82)), url('/sports_placeholder.png')",
         }}
       />
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#09090b]">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#09090b]/95 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md">
         <div className="mx-auto max-w-[1800px] px-4 md:px-8">
           <div className="flex h-14 items-center justify-between gap-2 lg:h-[72px] lg:gap-4">
             <Link
               to="/"
+              onClick={goHome}
+              aria-label="SportStream home"
               className="flex shrink-0 items-center gap-2.5 text-white"
             >
               <span className="flex h-8 w-8 items-center justify-center rounded bg-emerald-400 text-black">
@@ -200,10 +228,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 <button
                   key={category.id}
                   type="button"
-                  aria-pressed={selectedSport === category.id}
+                  aria-pressed={
+                    category.id === "home"
+                      ? selectedSport === "all"
+                      : selectedSport === category.id
+                  }
+                  title={category.name}
                   onClick={() => selectCategory(category.id)}
-                  className={`min-h-10 shrink-0 border-b-2 px-3 text-sm font-semibold ${selectedSport === category.id ? "border-emerald-400 text-white" : "border-transparent text-zinc-400 hover:text-white"}`}
+                  className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "border-emerald-400 text-white" : "border-transparent text-zinc-400 hover:text-white"}`}
                 >
+                  <span className="h-4 w-4">
+                    <CategoryIcon categoryId={category.id} />
+                  </span>
                   {category.name}
                 </button>
               ))}
@@ -229,7 +265,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none"
+                className="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-emerald-400 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
@@ -253,7 +289,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 focus:border-emerald-400 focus:outline-none"
+                className="h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-emerald-400 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
@@ -279,21 +315,26 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
           <nav
             aria-label="Sports categories"
-            className="grid grid-cols-5 border-t border-white/10 py-1 lg:hidden"
+            className="grid grid-cols-6 border-t border-white/10 py-1 lg:hidden"
           >
             {categories.map((category) => (
               <button
                 key={category.id}
                 type="button"
                 aria-label={category.name}
-                aria-pressed={selectedSport === category.id}
+                title={category.name}
+                aria-pressed={
+                  category.id === "home"
+                    ? selectedSport === "all"
+                    : selectedSport === category.id
+                }
                 onClick={() => selectCategory(category.id)}
-                className={`flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-md px-1 ${selectedSport === category.id ? "text-emerald-300" : "text-zinc-400"}`}
+                className={`flex min-h-12 min-w-0 items-center justify-center rounded-md px-2 transition-colors sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "text-emerald-300" : "text-zinc-400"}`}
               >
-                <span className="h-5 w-5">
+                <span className="h-5 w-5 shrink-0">
                   <CategoryIcon categoryId={category.id} />
                 </span>
-                <span className="max-w-full truncate text-[9px] font-semibold leading-none">
+                <span className="hidden max-w-full truncate text-[9px] font-semibold leading-none sm:inline">
                   {category.name}
                 </span>
               </button>

@@ -54,9 +54,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
       {/* Main Image Area */}
       <div
         className="flex-1 relative aspect-video lg:aspect-auto lg:h-[450px] bg-zinc-900 rounded-xl overflow-hidden cursor-pointer group"
+        role="button"
+        tabIndex={0}
+        aria-label={`Watch ${featuredMatch.title}`}
         onClick={() =>
           navigate(`/watch/${encodeURIComponent(featuredMatch.uriName)}`)
         }
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            navigate(`/watch/${encodeURIComponent(featuredMatch.uriName)}`);
+          }
+        }}
       >
         <img
           src={backgroundImage}

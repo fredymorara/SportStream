@@ -177,14 +177,7 @@ const HomePage: React.FC = () => {
       : sportSections;
 
     if (selectedSport !== "all") {
-      return sections.filter(
-        (sec) =>
-          sec.id === selectedSport ||
-          sec.name.toLowerCase().includes(selectedSport) ||
-          sec.matches.some(
-            (match) => match.category.toLowerCase() === selectedSport,
-          ),
-      );
+      return sections.filter((sec) => sec.id === selectedSport);
     }
 
     return sections.filter((sec) => sec.matches.length > 0);
@@ -289,7 +282,35 @@ const HomePage: React.FC = () => {
         />
       </Helmet>
 
-      <HeroSection featuredMatch={featuredMatch} />
+      {selectedSport === "all" ? (
+        <HeroSection featuredMatch={featuredMatch} />
+      ) : (
+        <section className="mb-10 border-b border-white/10 pb-8">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                {selectedSport === "live"
+                  ? "Live now"
+                  : selectedSport === "other"
+                    ? "Other sports"
+                    : `${selectedSport.charAt(0).toUpperCase()}${selectedSport.slice(1)} events`}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+                {selectedSport === "live"
+                  ? "Follow every event currently in progress."
+                  : `Browse live and upcoming ${selectedSport === "other" ? "sports" : selectedSport} events in one place.`}
+              </p>
+            </div>
+            <span className="hidden shrink-0 text-sm font-medium text-zinc-500 sm:block">
+              {categorizedSections.reduce(
+                (total, section) => total + section.matches.length,
+                0,
+              )}{" "}
+              events
+            </span>
+          </div>
+        </section>
+      )}
 
       {categorizedSections.length > 0 ? (
         <div className="space-y-4">

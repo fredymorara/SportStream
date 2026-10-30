@@ -28,11 +28,20 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   return (
     <div
       className="group cursor-pointer flex flex-col gap-3 w-full"
+      role="button"
+      tabIndex={0}
+      aria-label={`Watch ${match.title}`}
       onClick={() => navigate(`/watch/${encodeURIComponent(match.uriName)}`)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          navigate(`/watch/${encodeURIComponent(match.uriName)}`);
+        }
+      }}
     >
       {/* Thumbnail Container */}
       <div
-        className="relative aspect-video overflow-hidden rounded-lg border border-white/10 bg-zinc-900 bg-cover bg-center group-hover:border-white/25"
+        className="relative aspect-video overflow-hidden rounded-xl bg-zinc-900 bg-cover bg-center ring-1 ring-inset ring-white/10 transition-[box-shadow] duration-300 group-hover:ring-white/25"
         style={{ backgroundImage: `url(${PLACEHOLDER_IMAGE_URL})` }}
       >
         <img
