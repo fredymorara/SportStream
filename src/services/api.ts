@@ -56,14 +56,19 @@ interface StreamsResponse extends ApiResponse {
   streams: StreamCategory[];
 }
 
+interface StreamFreeSource {
+  quality: string;
+  url: string;
+  live: boolean;
+}
+
 interface StreamFreeEvent {
   name: string;
   category: string;
   league?: string;
   stream_key: string;
   match_timestamp: number;
-  sources: string[];
-  live_sources: string[];
+  sources: StreamFreeSource[];
   thumbnail_url?: string;
 }
 
@@ -220,26 +225,17 @@ let streamFreeMatchesPromise: Promise<APIMatch[]> | null = null;
 
 const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
   const date = Number(stream.match_timestamp) * 1000 || Date.now();
-  const liveSources = new Set(stream.live_sources || []);
-  const sources = [...new Set([...(stream.sources || []), ...liveSources])];
+  const sources = stream.sources || [];
+  const anyLive = sources.some((s) => s.live);
   const streamLinks = sources.map((source, index) => {
-    const sourcePath = new URL(source).pathname.split("/").at(-1) || "";
-    const variant = sourcePath.startsWith(stream.stream_key)
-      ? sourcePath.slice(stream.stream_key.length).toLowerCase()
-      : sourcePath.toLowerCase();
-    const quality = variant.match(/\d{3,4}p/)?.[0]?.toUpperCase() || "Stream";
-    const sourceLabel = variant.endsWith("1080p2")
-      ? "Source 2"
-      : variant.endsWith("1080p")
-        ? "Source 1"
-        : `Variant ${index + 1}`;
-
+    const qualityLabel = source.quality || "Stream";
+    const sourceLabel = index === 0 ? "Source 1" : `Source ${index + 1}`;
     return {
       id: `streamfree-${stream.stream_key}-${index}`,
-      label: `Admin 2 · ${sourceLabel} · ${quality}`,
+      label: `StreamFree · ${sourceLabel} · ${qualityLabel}`,
       uriName: `streamfree-${stream.stream_key}`,
-      iframe: source,
-      isLive: liveSources.has(source),
+      iframe: source.url,
+      isLive: source.live,
       provider: "streamfree" as const,
     };
   });
@@ -254,7 +250,7 @@ const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
     endsAt: date,
     poster: stream.thumbnail_url,
     status:
-      liveSources.size > 0 ? "live" : date > Date.now() ? "upcoming" : "ended",
+      anyLive ? "live" : date > Date.now() ? "upcoming" : "ended",
     uriName: `streamfree-${stream.stream_key}`,
     tag: stream.league || "",
     alwaysLive: false,
