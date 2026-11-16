@@ -39,7 +39,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
     >
       {/* Thumbnail */}
       <div
-        className="relative aspect-video overflow-hidden rounded-lg bg-[#111319] ring-1 ring-inset ring-[#1f2432] transition-[ring-color] duration-200 group-hover:ring-[#2e3547]"
+        className="relative aspect-video overflow-hidden rounded-lg bg-surface ring-1 ring-inset ring-border transition-[ring-color] duration-200 group-hover:ring-border-bright"
         style={{ backgroundImage: `url(${PLACEHOLDER_IMAGE_URL})`, backgroundSize: "cover" }}
       >
         <img
@@ -63,12 +63,12 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         {/* Status badge */}
         <div className="absolute top-2 left-2">
           {isLive ? (
-            <span className="flex items-center gap-1.5 rounded bg-[#ff2d55] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+            <span className="flex items-center gap-1.5 rounded bg-live-badge px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
+              <span className="h-1.5 w-1.5 rounded-full bg-white" />
               Live
             </span>
           ) : match.status === "upcoming" ? (
-            <span className="rounded bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/80">
+            <span className="rounded bg-black/70 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white/80">
               Upcoming
             </span>
           ) : null}
@@ -77,18 +77,18 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
 
       {/* Details */}
       <div className="flex flex-col gap-1 px-0.5">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-bold uppercase tracking-wider">
-          <span className={isLive ? "text-[#ff2d55]" : "text-[#4a5568]"}>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-bold uppercase tracking-wider">
+          <span className={isLive ? "text-live" : "text-muted"}>
             {match.category || "Sport"}
           </span>
-          <span className="text-[#2e3547]">·</span>
-          <span className="text-[#4a5568]">{formattedDate}</span>
+          <span className="text-border-bright">·</span>
+          <span className="text-muted">{formattedDate}</span>
         </div>
-        <h3 className="text-pretty break-words text-sm font-bold leading-snug text-[#f1f5f9] transition-colors duration-150 group-hover:text-[#00f076] sm:text-base">
+        <h3 className="text-pretty break-words text-sm font-bold leading-snug text-ink transition-colors duration-150 group-hover:text-accent sm:text-base">
           {match.title}
         </h3>
         {match.tag && (
-          <p className="truncate text-[11px] text-[#4a5568]">{match.tag}</p>
+          <p className="truncate text-[11px] text-muted">{match.tag}</p>
         )}
       </div>
     </div>

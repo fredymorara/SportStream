@@ -30,21 +30,21 @@ const LiveChip: React.FC<{ match: APIMatch }> = ({ match }) => {
       onClick={() =>
         navigate(`/watch/${encodeURIComponent(match.uriName)}${location.search}`)
       }
-      className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-[#1f2432] bg-[#111319] p-3 text-left transition-all hover:border-[#2e3547] hover:bg-[#171a23] active:scale-[.98]"
+      className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-border bg-surface p-3 text-left transition-all hover:border-border-bright hover:bg-surface-elevated active:scale-[.98]"
       style={{ minWidth: "160px", maxWidth: "200px" }}
     >
       <div className="flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff2d55]" />
-        <span className="text-[9px] font-black uppercase tracking-widest text-[#ff2d55]">Live</span>
-        <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide text-[#4a5568]">
+        <span className="h-1.5 w-1.5 rounded-full bg-live" />
+        <span className="text-[11px] font-black uppercase tracking-widest text-live">Live</span>
+        <span className="ml-auto text-[11px] font-semibold uppercase tracking-wide text-muted">
           {match.category}
         </span>
       </div>
-      <p className="line-clamp-2 text-xs font-bold leading-snug text-[#f1f5f9]">
+      <p className="line-clamp-2 text-xs font-bold leading-snug text-ink">
         {match.title}
       </p>
       {match.tag && (
-        <p className="truncate text-[10px] text-[#4a5568]">{match.tag}</p>
+        <p className="truncate text-[11px] text-muted">{match.tag}</p>
       )}
     </button>
   );
@@ -64,14 +64,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   /* ── empty state ── */
   if (!featuredMatch) {
     return (
-      <div className="mb-10 flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-[#1f2432] bg-[#111319] px-8 text-center">
-        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-[#1f2432] bg-[#08090c]">
-          <svg className="h-7 w-7 text-[#4a5568]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+      <div className="mb-10 flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-border bg-surface px-8 text-center">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-pitch">
+          <svg className="h-7 w-7 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
           </svg>
         </div>
-        <h2 className="mb-2 text-xl font-black text-[#f1f5f9]">No events right now</h2>
-        <p className="text-sm text-[#4a5568]">Check back soon — events go live closer to kick-off.</p>
+        <h2 className="mb-2 text-xl font-black text-ink">No events right now</h2>
+        <p className="text-sm text-muted">Check back soon — events go live closer to kick-off.</p>
       </div>
     );
   }
@@ -128,16 +128,16 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           {/* Top row: badges */}
           <div className="flex items-center gap-2.5">
             {isLive ? (
-              <span className="flex items-center gap-1.5 rounded-full bg-[#ff2d55] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              <span className="flex items-center gap-1.5 rounded-full bg-live-badge px-3 py-1 text-[11px] font-black uppercase tracking-widest text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
                 Live Now
               </span>
             ) : (
-              <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/80">
+              <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1 text-[11px] font-black uppercase tracking-widest text-white/80">
                 Upcoming
               </span>
             )}
-            <span className="rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/70">
+            <span className="rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white/70">
               {featuredMatch.category}
             </span>
           </div>
@@ -146,7 +146,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
           <div className="mt-auto max-w-2xl">
             {/* League */}
             {featuredMatch.tag && (
-              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#00f076]">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-accent">
                 {featuredMatch.tag}
               </p>
             )}
@@ -157,7 +157,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
                 <span className="text-3xl font-black leading-none text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
                   {matchup[0]}
                 </span>
-                <span className="text-lg font-black text-white/40 sm:text-2xl">vs</span>
+                <span className="text-lg font-black text-white/60 sm:text-2xl">vs</span>
                 <span className="text-3xl font-black leading-none text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
                   {matchup[1]}
                 </span>
@@ -176,7 +176,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({
               <button
                 type="button"
                 onClick={openFeatured}
-                className="flex items-center gap-2.5 rounded-lg bg-[#00f076] px-6 py-3 text-sm font-black uppercase tracking-wider text-[#041a0e] shadow-[0_0_32px_rgba(0,240,118,.35)] transition-all hover:scale-[1.03] hover:bg-[#0df27e] hover:shadow-[0_0_48px_rgba(0,240,118,.5)] active:scale-100"
+                className="flex items-center gap-2.5 rounded-lg bg-accent px-6 py-3 text-sm font-black uppercase tracking-wider text-ink-inverse shadow-[0_6px_16px_rgba(0,0,0,0.45)] ring-1 ring-inset ring-white/20 transition-all hover:scale-[1.03] hover:bg-accent-hover hover:ring-white/30 active:scale-100"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
@@ -197,8 +197,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({
       {otherLive.length > 0 && (
         <div className="mt-4">
           <div className="mb-3 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff2d55]" />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4a5568]">
+            <span className="h-1.5 w-1.5 rounded-full bg-live" />
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted">
               Also live
             </p>
           </div>

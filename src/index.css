@@ -1,42 +1,53 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", "Outfit", system-ui, sans-serif;
+  --font-sans: "Outfit", system-ui, sans-serif;
+
+  /* Surfaces */
   --color-pitch: #08090c;
   --color-surface: #111319;
   --color-surface-elevated: #171a23;
   --color-border: #1f2432;
   --color-border-bright: #2e3547;
+
+  /* Foreground */
+  --color-ink: #f1f5f9;
+  --color-ink-inverse: #041a0e;
+  --color-muted: #8892a4;
+
+  /* Brand + status. Live text passes AA on dark (5.1:1); the badge
+     background is darkened so white label text passes AA (5.6:1). */
   --color-accent: #00f076;
   --color-accent-hover: #0df27e;
   --color-live: #ff2d55;
+  --color-live-badge: #c81e44;
 }
 
 :root {
-  font-family: "Inter", "Outfit", system-ui, sans-serif;
+  font-family: var(--font-sans);
   color-scheme: dark;
-  background-color: #08090c;
-  color: #f1f5f9;
-  --accent: #00f076;
-  --accent-strong: #0df27e;
-  --surface: #111319;
-  --surface-elevated: #171a23;
-  --line: #1f2432;
+  background-color: var(--color-pitch);
+  color: var(--color-ink);
+  --accent: var(--color-accent);
+  --accent-strong: var(--color-accent-hover);
+  --surface: var(--color-surface);
+  --surface-elevated: var(--color-surface-elevated);
+  --line: var(--color-border);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #08090c;
-  color: #f1f5f9;
+  background-color: var(--color-pitch);
+  color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-  color: #041a0e;
-  background: #00f076;
+  color: var(--color-ink-inverse);
+  background: var(--color-accent);
 }
 
 button,
@@ -60,21 +71,14 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 [role="button"]:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
 .search-input:focus-visible {
   outline: none;
-  border-color: #00f076;
-  box-shadow: 0 0 0 1px #00f076;
-}
-
-@media (min-width: 1024px) {
-  .cardio-loader-scale {
-    transform: scale(3);
-    transform-origin: center;
-  }
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 
 .match-grid-section {
@@ -102,14 +106,39 @@ input:focus-visible,
 }
 
 ::-webkit-scrollbar-track {
-  background: #08090c;
+  background: var(--color-pitch);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f2432;
+  background: var(--color-border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2e3547;
+  background: var(--color-border-bright);
+}
+
+/*
+ * Reduced motion: stop decorative animation and movement, but keep every
+ * state change communicated through color, opacity, shadow or static dots.
+ * A blanket `animation-duration: 0.01ms` would also kill meaningful fades.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-spin,
+  .loading-spinner * {
+    animation: none !important;
+  }
+
+  button,
+  [role="button"],
+  a {
+    transition-property: background-color, border-color, color, box-shadow, opacity !important;
+  }
+
+  button:active,
+  [role="button"]:active,
+  [class*="hover:scale-"]:hover {
+    transform: none !important;
+  }
 }

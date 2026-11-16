@@ -7,7 +7,6 @@ import {
 } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { setSearchQuery, setSelectedSport } from "../store/matchesSlice";
-import AdBanner from "../components/AdBanner";
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -16,8 +15,6 @@ interface InstallPromptEvent extends Event {
 
 interface MainLayoutProps {
   children: React.ReactNode;
-  topAdActive?: boolean;
-  fullViewport?: boolean;
 }
 
 type CategoryId =
@@ -136,11 +133,7 @@ const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
   );
 };
 
-const MainLayout: React.FC<MainLayoutProps> = ({
-  children,
-  topAdActive = false,
-  fullViewport = false,
-}) => {
+const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(
     null,
   );
@@ -157,6 +150,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: "live" as const, name: "Live Now" },
     { id: "upcoming" as const, name: "Upcoming" },
     { id: "basketball" as const, name: "Basketball" },
+    { id: "baseball" as const, name: "Baseball" },
     { id: "other" as const, name: "Others" },
   ];
 
@@ -215,18 +209,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     setInstallPrompt(null);
   };
 
-  if (fullViewport) {
-    return (
-      <div className="h-[100dvh] w-full overflow-hidden bg-[#08090c] text-slate-100">
-        <main className="h-full w-full min-w-0 overflow-hidden">
-          {children}
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <div className="relative min-h-screen w-full bg-[#08090c] text-slate-100">
+    <div className="relative min-h-screen w-full bg-pitch text-slate-100">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center"
@@ -235,7 +219,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             "linear-gradient(rgba(0, 0, 0, .66), rgba(0, 0, 0, .82)), url('/sports_placeholder.png')",
         }}
       />
-      <header className="sticky top-0 z-40 border-b border-[#1f2432] bg-[#08090c]/98 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-border bg-pitch/98 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md">
         <div className="mx-auto max-w-[1800px] px-4 md:px-8">
           <div className="flex h-14 items-center justify-between gap-2 lg:h-[72px] lg:gap-4">
             <Link
@@ -244,7 +228,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               aria-label="SportStream home"
               className="flex shrink-0 items-center gap-2.5 text-white"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded bg-[#00f076] text-[#041a0e]">
+              <span className="flex h-8 w-8 items-center justify-center rounded bg-accent text-ink-inverse">
                 <svg
                   className="h-5 w-5"
                   fill="currentColor"
@@ -275,7 +259,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   }
                   title={category.name}
                   onClick={() => selectCategory(category.id)}
-                  className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "border-[#00f076] text-white" : "border-transparent text-[#8892a4] hover:text-white"}`}
+                  className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "border-accent text-white" : "border-transparent text-muted hover:text-white"}`}
                 >
                   <span className="h-4 w-4">
                     <CategoryIcon categoryId={category.id} />
@@ -287,7 +271,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
             <label className="relative block min-w-0 flex-1 lg:hidden">
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4a5568]"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -305,13 +289,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="search-input h-10 w-full rounded-md border border-[#1f2432] bg-[#111319] pl-9 pr-3 text-sm text-white placeholder:text-[#4a5568] transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
+                className="search-input h-11 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-white placeholder:text-muted transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
             <label className="relative hidden w-[min(24vw,220px)] shrink-0 lg:block">
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4a5568]"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -329,7 +313,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="search-input h-10 w-full rounded-md border border-[#1f2432] bg-[#111319] pl-9 pr-3 text-sm text-white placeholder:text-[#4a5568] transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
+                className="search-input h-11 w-full rounded-md border border-border bg-surface pl-9 pr-3 text-sm text-white placeholder:text-muted transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
@@ -338,7 +322,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               onClick={installApp}
               aria-label="Install SportStream"
               title="Install SportStream"
-              className={`${installPrompt ? "flex" : "hidden"} h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#00f076]/30 bg-[#00f076]/10 text-[#00f076]`}
+              className={`${installPrompt ? "flex" : "hidden"} h-10 w-10 shrink-0 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent`}
             >
               <svg
                 className="h-5 w-5"
@@ -355,7 +339,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
           <nav
             aria-label="Sports categories"
-            className="mobile-category-nav grid grid-cols-6 border-t border-[#1f2432] pt-1 lg:hidden"
+            className="mobile-category-nav grid grid-cols-7 border-t border-border pt-1 lg:hidden"
           >
             {categories.map((category) => (
               <button
@@ -369,12 +353,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     : selectedSport === category.id
                 }
                 onClick={() => selectCategory(category.id)}
-                className={`flex min-h-12 min-w-0 touch-manipulation items-center justify-center rounded-md px-2 transition-colors focus-visible:bg-white/10 sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "bg-[#00f076]/10 text-[#00f076]" : "text-[#8892a4] hover:bg-white/5 hover:text-white"}`}
+                className={`flex min-h-12 min-w-0 touch-manipulation items-center justify-center rounded-md px-2 transition-colors focus-visible:bg-white/10 sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5 hover:text-white"}`}
               >
                 <span className="h-5 w-5 shrink-0">
                   <CategoryIcon categoryId={category.id} />
                 </span>
-                <span className="hidden max-w-full truncate text-[9px] font-semibold leading-none sm:inline">
+                <span className="hidden max-w-full truncate text-[11px] font-semibold leading-none sm:inline">
                   {category.name}
                 </span>
               </button>
@@ -384,7 +368,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       </header>
 
       <main className="relative z-10 mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-        <AdBanner position="top" active={topAdActive} />
         {children}
       </main>
     </div>

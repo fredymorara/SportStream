@@ -27,29 +27,29 @@ const FeedCard: React.FC<FeedCardProps> = ({ link, index, active, onSelect }) =>
     aria-pressed={active}
     className={`group relative w-full overflow-hidden rounded-lg border px-4 py-3 text-left transition-all duration-200 active:scale-[.98] ${
       active
-        ? "border-[#00f076]/50 bg-[#00f076]/10 shadow-[0_0_20px_rgba(0,240,118,.12)]"
-        : "border-[#1f2432] bg-[#111319] hover:border-[#2e3547] hover:bg-[#171a23]"
+        ? "border-accent/50 bg-accent/10 shadow-[0_0_20px_rgba(0,240,118,.12)]"
+        : "border-border bg-surface hover:border-border-bright hover:bg-surface-elevated"
     }`}
   >
     {/* subtle left accent bar */}
     <span
       className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-all duration-200 ${
-        active ? "bg-[#00f076]" : "bg-white/0 group-hover:bg-white/15"
+        active ? "bg-accent" : "bg-white/0 group-hover:bg-white/15"
       }`}
     />
     <div className="flex items-center justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-0.5">
         <span
           className={`truncate text-sm font-semibold leading-snug ${
-            active ? "text-[#00f076]" : "text-white/90"
+            active ? "text-accent" : "text-white/90"
           }`}
         >
           {link.label || `Feed ${index + 1}`}
         </span>
         {link.locale && (
           <span
-            className={`text-[10px] uppercase tracking-wider ${
-              active ? "text-[#00f076]/60" : "text-white/35"
+            className={`text-[11px] uppercase tracking-wider ${
+              active ? "text-accent" : "text-muted"
             }`}
           >
             {link.locale}
@@ -58,11 +58,11 @@ const FeedCard: React.FC<FeedCardProps> = ({ link, index, active, onSelect }) =>
       </div>
       {link.isLive !== undefined && (
         <span
-          className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest ${
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-widest ${
             link.isLive
               ? active
-                ? "bg-[#00f076]/20 text-[#00f076]"
-                : "bg-[#00f076]/10 text-[#00f076]"
+                ? "bg-accent/20 text-accent"
+                : "bg-accent/10 text-accent"
               : active
                 ? "bg-amber-500/15 text-amber-400"
                 : "bg-amber-500/10 text-amber-500"
@@ -70,10 +70,10 @@ const FeedCard: React.FC<FeedCardProps> = ({ link, index, active, onSelect }) =>
         >
           <span
             className={`h-1.5 w-1.5 rounded-full ${
-              link.isLive ? "animate-pulse bg-[#00f076]" : "bg-amber-500"
+              link.isLive ? "bg-accent" : "bg-amber-500"
             }`}
           />
-          {link.isLive ? "Live" : "Waiting"}
+          {link.isLive ? "On air" : "Waiting"}
         </span>
       )}
     </div>
@@ -135,7 +135,7 @@ const PlayerPage: React.FC = () => {
     return (
       <MainLayout>
         <div className="flex min-h-[60vh] items-center justify-center">
-          <LoadingSpinner color="#10B981" size="72" />
+          <LoadingSpinner size="96" />
         </div>
       </MainLayout>
     );
@@ -143,6 +143,7 @@ const PlayerPage: React.FC = () => {
 
   /* ── error / not found ── */
   if (error || !match) {
+    const isNetworkError = Boolean(error);
     return (
       <MainLayout>
         <div className="mx-auto flex min-h-[60vh] max-w-sm flex-col items-center justify-center gap-5 px-6 text-center">
@@ -152,12 +153,18 @@ const PlayerPage: React.FC = () => {
             </svg>
           </div>
           <div>
-            <p className="mb-1 font-bold text-white">Stream not found</p>
-            <p className="text-sm text-[#4a5568]">This event may have ended or the link is invalid.</p>
+            <p className="mb-1 font-bold text-white">
+              {isNetworkError ? "Couldn't load events" : "Stream not found"}
+            </p>
+            <p className="text-sm text-muted">
+              {isNetworkError
+                ? error
+                : "This event may have ended or the link is invalid."}
+            </p>
           </div>
           <button
             onClick={() => navigate(`/${location.search}`)}
-            className="rounded-full bg-[#00f076] px-6 py-2.5 text-sm font-black uppercase tracking-wider text-[#041a0e] transition hover:scale-105 hover:bg-[#00f076] active:scale-100"
+            className="rounded-full bg-accent px-6 py-2.5 text-sm font-black uppercase tracking-wider text-ink-inverse transition hover:scale-105 hover:bg-accent active:scale-100"
           >
             Back to Events
           </button>
@@ -182,15 +189,24 @@ const PlayerPage: React.FC = () => {
   return (
     <MainLayout>
       <Helmet>
-        <title>Watch {match.title} | SportStream</title>
-        <meta name="description" content={`Watch ${match.title} on SportStream.`} />
-        <meta property="og:title" content={`Watch ${match.title} | SportStream`} />
-        <meta property="og:description" content={`Watch ${match.title} on SportStream.`} />
+        <title>{match.title} | SportStream — Event Guide</title>
+        <meta
+          name="description"
+          content={`Event details and third-party feed information for ${match.title}. SportStream is an educational project and does not host or provide streams.`}
+        />
+        <meta property="og:title" content={`${match.title} | SportStream`} />
+        <meta
+          property="og:description"
+          content={`Discover ${match.title} and other live sports events from third-party sources.`}
+        />
         <meta property="og:image" content={posterUrl} />
-        <meta property="og:type" content="video.other" />
+        <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`Watch ${match.title}`} />
-        <meta name="twitter:description" content={`Watch ${match.title} on SportStream.`} />
+        <meta name="twitter:title" content={match.title} />
+        <meta
+          name="twitter:description"
+          content="Discover live sports events from third-party sources."
+        />
         <meta name="twitter:image" content={posterUrl} />
       </Helmet>
 
@@ -205,7 +221,7 @@ const PlayerPage: React.FC = () => {
         {/* ── LEFT: video player ────────────────────────────────────────── */}
         <div className="min-w-0 flex-1">
           <div
-            className="relative w-full overflow-hidden rounded-xl bg-[#08090c] shadow-[0_4px_60px_rgba(0,0,0,0.7)]"
+            className="relative w-full overflow-hidden rounded-xl bg-pitch shadow-[0_4px_60px_rgba(0,0,0,0.7)]"
             style={{ aspectRatio: "16/9" }}
           >
             {/* Poster */}
@@ -244,19 +260,13 @@ const PlayerPage: React.FC = () => {
             {/* Play gate */}
             {!streamStarted && selectedLink && (
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-6 text-center">
-                {isLive && (
-                  <span className="flex items-center gap-1.5 rounded-full bg-red-600/90 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-                    Live
-                  </span>
-                )}
                 <h2 className="max-w-md text-xl font-black leading-tight text-white drop-shadow-lg sm:text-3xl">
                   {match.title}
                 </h2>
                 <button
                   type="button"
                   onClick={() => setStreamStarted(true)}
-                  className="mt-1 flex h-16 w-16 items-center justify-center rounded-full bg-[#00f076] text-black shadow-[0_0_48px_rgba(0,240,118,.55)] transition-all duration-200 hover:scale-110 hover:bg-[#0df27e] active:scale-95"
+                  className="mt-1 flex h-16 w-16 items-center justify-center rounded-full bg-accent text-black shadow-[0_8px_20px_rgba(0,0,0,0.5)] ring-1 ring-inset ring-white/20 transition-all duration-200 hover:scale-110 hover:bg-accent-hover active:scale-95"
                   aria-label="Play stream"
                 >
                   <svg className="ml-1 h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
@@ -276,7 +286,7 @@ const PlayerPage: React.FC = () => {
             {/* Connecting spinner */}
             {streamStarted && !frameLoaded && selectedLink && (
               <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3">
-                <span className="h-9 w-9 animate-spin rounded-full border-2 border-[#1f2432] border-t-[#00f076]" />
+                <span className="h-9 w-9 animate-spin rounded-full border-2 border-border border-t-accent" />
                 <span className="text-[11px] font-bold uppercase tracking-widest text-white/50">
                   Connecting…
                 </span>
@@ -286,31 +296,31 @@ const PlayerPage: React.FC = () => {
         </div>
 
         {/* ── RIGHT: info + feeds sidebar ──────────────────────────────── */}
-        <aside className="flex shrink-0 flex-col gap-0 overflow-hidden rounded-xl border border-[#1f2432] bg-[#111319] lg:sticky lg:top-[calc(72px+2rem)] lg:w-[340px] xl:w-[380px]">
+        <aside className="flex shrink-0 flex-col gap-0 overflow-hidden rounded-xl border border-border bg-surface lg:sticky lg:top-[calc(72px+2rem)] lg:w-[340px] xl:w-[380px]">
 
           {/* Match info block */}
           <div className="px-5 pb-4 pt-5">
             {/* Status + category row */}
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {isLive && (
-                <span className="flex items-center gap-1.5 rounded-full bg-red-600/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-red-400 ring-1 ring-red-500/25">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                <span className="flex items-center gap-1.5 rounded-full bg-red-600/20 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-widest text-red-400 ring-1 ring-red-500/25">
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
                   Live
                 </span>
               )}
               {!isLive && match.status === "upcoming" && (
-                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-400 ring-1 ring-amber-500/20">
+                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-widest text-amber-400 ring-1 ring-amber-500/20">
                   Upcoming
                 </span>
               )}
-              <span className="rounded-full bg-[#171a23] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#8892a4]">
+              <span className="rounded-full bg-surface-elevated px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-muted">
                 {match.category}
               </span>
             </div>
 
             {/* League */}
             {match.tag && (
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-[#4a5568]">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted">
                 {match.tag}
               </p>
             )}
@@ -321,18 +331,18 @@ const PlayerPage: React.FC = () => {
             </h1>
 
             {/* Date */}
-            <p className="mt-2 text-xs text-[#4a5568]">{formattedDate}</p>
+            <p className="mt-2 text-xs text-muted">{formattedDate}</p>
           </div>
 
           {/* Divider */}
-          <div className="mx-5 border-t border-[#1f2432]" />
+          <div className="mx-5 border-t border-border" />
 
           {/* Back button */}
           <div className="px-5 py-3">
             <button
               type="button"
               onClick={() => navigate(`/${location.search}`)}
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-[#8892a4] transition-all hover:bg-[#171a23] hover:text-white active:scale-[.98]"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted transition-all hover:bg-surface-elevated hover:text-white active:scale-[.98]"
             >
               <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
@@ -342,14 +352,14 @@ const PlayerPage: React.FC = () => {
           </div>
 
           {/* Divider */}
-          <div className="mx-5 border-t border-[#1f2432]" />
+          <div className="mx-5 border-t border-border" />
 
           {/* Feeds */}
           <div className="flex flex-col gap-2.5 px-5 py-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#4a5568]">
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted">
               Available feeds
               {match.streamLinks.length > 0 && (
-                <span className="ml-2 rounded-full bg-[#171a23] px-1.5 py-px font-bold text-[#4a5568]">
+                <span className="ml-2 rounded-full bg-surface-elevated px-1.5 py-px font-bold text-muted">
                   {match.streamLinks.length}
                 </span>
               )}
@@ -366,7 +376,7 @@ const PlayerPage: React.FC = () => {
                 />
               ))
             ) : (
-              <p className="rounded-lg border border-white/[0.05] bg-white/[0.02] px-4 py-4 text-sm text-[#4a5568]">
+              <p className="rounded-lg border border-white/[0.05] bg-white/[0.02] px-4 py-4 text-sm text-muted">
                 No feeds published yet.
               </p>
             )}

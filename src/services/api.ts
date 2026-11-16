@@ -232,7 +232,7 @@ const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
     const sourceLabel = index === 0 ? "Source 1" : `Source ${index + 1}`;
     return {
       id: `streamfree-${stream.stream_key}-${index}`,
-      label: `Admin 2 · ${sourceLabel} · ${qualityLabel}`,
+      label: `${sourceLabel} · ${qualityLabel}`,
       uriName: `streamfree-${stream.stream_key}`,
       iframe: source.url,
       isLive: source.live,
@@ -311,7 +311,7 @@ const toMatch = (
       ? [
           {
             id: `ppv-${stream.id}`,
-            label: stream.tag ? `Admin · ${stream.tag}` : "Admin",
+            label: stream.tag || "Primary feed",
             uriName: stream.uri_name,
             iframe: stream.iframe,
             isLive: status === "live",
@@ -323,7 +323,7 @@ const toMatch = (
       .filter((substream) => Boolean(substream.iframe))
       .map((substream) => ({
         id: `ppv-${substream.id}`,
-        label: `Admin · ${substream.source_tag || substream.tag || substream.name}`,
+        label: substream.source_tag || substream.tag || substream.name,
         locale: substream.locale,
         uriName: substream.uri_name,
         iframe: substream.iframe as string,
@@ -456,6 +456,5 @@ export const api = {
     return matches;
   },
 
-  getPosterUrl: (poster?: string) => poster || "/sports_placeholder.png",
   getPosterCandidates,
 };

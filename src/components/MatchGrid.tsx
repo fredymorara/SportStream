@@ -13,11 +13,11 @@ interface MatchGridProps {
 const MatchGrid: React.FC<MatchGridProps> = ({ section }) => {
   return (
     <div className="match-grid-section mb-12">
-      <div className="mb-6 flex items-center gap-3 border-b border-[#1f2432] pb-4">
-        <h3 className="text-xl font-black tracking-tight text-[#f1f5f9] sm:text-2xl">
+      <div className="mb-6 flex items-center gap-3 border-b border-border pb-4">
+        <h3 className="text-xl font-black tracking-tight text-ink sm:text-2xl">
           {section.name}
         </h3>
-        <span className="rounded-full border border-[#1f2432] bg-[#111319] px-2.5 py-0.5 text-xs font-bold text-[#4a5568]">
+        <span className="rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-muted">
           {section.matches.length}
         </span>
       </div>
