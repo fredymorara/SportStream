@@ -232,7 +232,7 @@ const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
     const sourceLabel = index === 0 ? "Source 1" : `Source ${index + 1}`;
     return {
       id: `streamfree-${stream.stream_key}-${index}`,
-      label: `StreamFree · ${sourceLabel} · ${qualityLabel}`,
+      label: `Admin 2 · ${sourceLabel} · ${qualityLabel}`,
       uriName: `streamfree-${stream.stream_key}`,
       iframe: source.url,
       isLive: source.live,

@@ -1,43 +1,108 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import MainLayout from "../layouts/MainLayout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchMatchesByStatus } from "../store/matchesSlice";
 import { api } from "../services/api";
 import { formatEventDate } from "../utils/formatDate";
+import type { StreamLink } from "../services/api";
 
 const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
-import { Helmet } from "react-helmet-async";
+/* ─── Feed card (vertical, full-width inside sidebar) ─────────────────────── */
+
+interface FeedCardProps {
+  link: StreamLink;
+  index: number;
+  active: boolean;
+  onSelect: (id: string) => void;
+}
+
+const FeedCard: React.FC<FeedCardProps> = ({ link, index, active, onSelect }) => (
+  <button
+    type="button"
+    onClick={() => onSelect(link.id)}
+    aria-pressed={active}
+    className={`group relative w-full overflow-hidden rounded-lg border px-4 py-3 text-left transition-all duration-200 active:scale-[.98] ${
+      active
+        ? "border-emerald-500/50 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,.12)]"
+        : "border-white/[0.07] bg-white/[0.03] hover:border-white/[0.14] hover:bg-white/[0.06]"
+    }`}
+  >
+    {/* subtle left accent bar */}
+    <span
+      className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full transition-all duration-200 ${
+        active ? "bg-emerald-400" : "bg-white/0 group-hover:bg-white/15"
+      }`}
+    />
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span
+          className={`truncate text-sm font-semibold leading-snug ${
+            active ? "text-emerald-300" : "text-white/90"
+          }`}
+        >
+          {link.label || `Feed ${index + 1}`}
+        </span>
+        {link.locale && (
+          <span
+            className={`text-[10px] uppercase tracking-wider ${
+              active ? "text-emerald-400/60" : "text-white/35"
+            }`}
+          >
+            {link.locale}
+          </span>
+        )}
+      </div>
+      {link.isLive !== undefined && (
+        <span
+          className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest ${
+            link.isLive
+              ? active
+                ? "bg-emerald-500/20 text-emerald-300"
+                : "bg-emerald-500/10 text-emerald-400"
+              : active
+                ? "bg-amber-500/15 text-amber-400"
+                : "bg-amber-500/10 text-amber-500"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${
+              link.isLive ? "animate-pulse bg-emerald-400" : "bg-amber-500"
+            }`}
+          />
+          {link.isLive ? "Live" : "Waiting"}
+        </span>
+      )}
+    </div>
+  </button>
+);
+
+/* ─── Player Page ─────────────────────────────────────────────────────────── */
 
 const PlayerPage: React.FC = () => {
   const { matchId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
-  const playerSurfaceRef = useRef<HTMLDivElement>(null);
 
-  const { rawMatches } = useAppSelector((state) => state.matches);
-  const { loading, error } = useAppSelector((state) => state.matches);
+  const { rawMatches, loading, error } = useAppSelector(
+    (state) => state.matches,
+  );
   const [selectedLinkId, setSelectedLinkId] = useState("");
   const [frameLoaded, setFrameLoaded] = useState(false);
   const [streamStarted, setStreamStarted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(true);
   const [failedPoster, setFailedPoster] = useState<{
     matchId: string;
     imageIndex: number;
   } | null>(null);
 
-  const match = useMemo(() => {
-    return rawMatches.find((m) => m.uriName === matchId) || null;
-  }, [rawMatches, matchId]);
-
-  const selectedLink =
-    match?.streamLinks.find((link) => link.id === selectedLinkId) ||
-    match?.streamLinks[0] ||
-    null;
+  const match = useMemo(
+    () => rawMatches.find((m) => m.uriName === matchId) ?? null,
+    [rawMatches, matchId],
+  );
 
   useEffect(() => {
     if (rawMatches.length === 0) {
@@ -46,353 +111,267 @@ const PlayerPage: React.FC = () => {
   }, [dispatch, rawMatches.length]);
 
   useEffect(() => {
-    const resetSelection = window.setTimeout(() => {
+    const t = window.setTimeout(() => {
       setSelectedLinkId(
-        match?.streamLinks.find((link) => link.isLive)?.id ||
+        match?.streamLinks.find((l) => l.isLive)?.id ||
           match?.streamLinks[0]?.id ||
           "",
       );
       setFrameLoaded(false);
     }, 0);
-    return () => window.clearTimeout(resetSelection);
+    return () => window.clearTimeout(t);
   }, [match?.id, match?.streamLinks]);
 
   useEffect(() => {
-    const resetPlayer = window.setTimeout(() => {
+    const t = window.setTimeout(() => {
       setFrameLoaded(false);
       setStreamStarted(false);
     }, 0);
-    return () => window.clearTimeout(resetPlayer);
-  }, [selectedLink?.id]);
+    return () => window.clearTimeout(t);
+  }, [selectedLinkId]);
 
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      const fullscreenElement = document.fullscreenElement;
-      const playerSurface = playerSurfaceRef.current;
-      const fullscreen = Boolean(
-        fullscreenElement &&
-        playerSurface &&
-        (fullscreenElement === playerSurface ||
-          playerSurface.contains(fullscreenElement)),
-      );
-      setIsFullscreen(fullscreen);
-      if (!fullscreen) setControlsVisible(true);
-    };
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () =>
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, []);
-
-  useEffect(() => {
-    if (!isFullscreen) return;
-
-    let hideTimeout = window.setTimeout(() => setControlsVisible(false), 2200);
-    const revealControls = () => {
-      setControlsVisible(true);
-      window.clearTimeout(hideTimeout);
-      hideTimeout = window.setTimeout(() => setControlsVisible(false), 2200);
-    };
-
-    window.addEventListener("pointermove", revealControls);
-    window.addEventListener("wheel", revealControls, { passive: true });
-    window.addEventListener("touchstart", revealControls, { passive: true });
-    return () => {
-      window.clearTimeout(hideTimeout);
-      window.removeEventListener("pointermove", revealControls);
-      window.removeEventListener("wheel", revealControls);
-      window.removeEventListener("touchstart", revealControls);
-    };
-  }, [isFullscreen]);
-
-  const toggleFullscreen = async () => {
-    const playerSurface = playerSurfaceRef.current;
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await playerSurface?.requestFullscreen();
-      }
-    } catch (fullscreenError) {
-      console.error("Unable to toggle player fullscreen:", fullscreenError);
-    }
-  };
-
+  /* ── loading ── */
   if (loading && rawMatches.length === 0) {
     return (
-      <MainLayout fullViewport>
-        <div className="flex h-full flex-col items-center justify-center">
-          <LoadingSpinner color="#10B981" size="80" />
+      <MainLayout>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LoadingSpinner color="#10B981" size="72" />
         </div>
       </MainLayout>
     );
   }
 
+  /* ── error / not found ── */
   if (error || !match) {
     return (
-      <MainLayout fullViewport>
-        <div className="mx-auto flex h-full max-w-md flex-col items-center justify-center px-6 text-center">
-          <p className="text-red-500 text-lg font-medium mb-6">
-            Match not found or streams failed to load.
-          </p>
+      <MainLayout>
+        <div className="mx-auto flex min-h-[60vh] max-w-sm flex-col items-center justify-center gap-5 px-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-500/10 ring-1 ring-red-500/20">
+            <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+            </svg>
+          </div>
+          <div>
+            <p className="mb-1 font-bold text-white">Stream not found</p>
+            <p className="text-sm text-zinc-500">This event may have ended or the link is invalid.</p>
+          </div>
           <button
             onClick={() => navigate(`/${location.search}`)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black tracking-wide py-3 px-6 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300 hover:scale-105"
+            className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-black uppercase tracking-wider text-black transition hover:scale-105 hover:bg-emerald-400 active:scale-100"
           >
-            RETURN TO HOME
+            Back to Events
           </button>
         </div>
       </MainLayout>
     );
   }
+
+  const selectedLink =
+    match.streamLinks.find((l) => l.id === selectedLinkId) ||
+    match.streamLinks[0] ||
+    null;
 
   const posterCandidates = api.getPosterCandidates(match);
   const posterIndex =
     failedPoster?.matchId === match.id ? failedPoster.imageIndex : 0;
-  const backgroundImage =
-    posterCandidates[posterIndex] || PLACEHOLDER_IMAGE_URL;
+  const posterUrl = posterCandidates[posterIndex] || PLACEHOLDER_IMAGE_URL;
+
   const isLive = match.status === "live";
-  const formattedDate = formatEventDate(match.date, {
-    weekday: "long",
-  });
+  const formattedDate = formatEventDate(match.date, { weekday: "long" });
 
   return (
-    <MainLayout fullViewport>
+    <MainLayout>
       <Helmet>
         <title>Watch {match.title} | SportStream</title>
-        <meta
-          name="description"
-          content={`Watch ${match.title} on SportStream.`}
-        />
-        <meta
-          property="og:title"
-          content={`Watch ${match.title} | SportStream`}
-        />
-        <meta
-          property="og:description"
-          content={`Watch ${match.title} on SportStream.`}
-        />
-        <meta property="og:image" content={backgroundImage} />
+        <meta name="description" content={`Watch ${match.title} on SportStream.`} />
+        <meta property="og:title" content={`Watch ${match.title} | SportStream`} />
+        <meta property="og:description" content={`Watch ${match.title} on SportStream.`} />
+        <meta property="og:image" content={posterUrl} />
         <meta property="og:type" content="video.other" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`Watch ${match.title}`} />
-        <meta
-          name="twitter:description"
-          content={`Watch ${match.title} on SportStream.`}
-        />
-        <meta name="twitter:image" content={backgroundImage} />
+        <meta name="twitter:description" content={`Watch ${match.title} on SportStream.`} />
+        <meta name="twitter:image" content={posterUrl} />
       </Helmet>
 
-      <div
-        ref={playerSurfaceRef}
-        className="relative h-[100dvh] w-full overflow-hidden bg-[#050505]"
-        onPointerMove={() => {
-          if (isFullscreen) setControlsVisible(true);
-        }}
-        onWheel={() => {
-          if (isFullscreen) setControlsVisible(true);
-        }}
-      >
-        <img
-          key={backgroundImage}
-          src={backgroundImage}
-          alt=""
-          aria-hidden="true"
-          onError={() => {
-            if (posterIndex < posterCandidates.length - 1) {
-              setFailedPoster({
-                matchId: match.id,
-                imageIndex: posterIndex + 1,
-              });
-            }
-          }}
-          className="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
-          style={{ opacity: frameLoaded ? 0.28 : 1 }}
-        />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/20 via-black/10 to-black/75" />
+      {/*
+        Two-column layout on desktop (lg+):
+          left  — video player (flex-1, keeps 16:9 ratio)
+          right — info + feeds sidebar (fixed 340-380px, sticky)
+        On mobile: stacks vertically (video → info)
+      */}
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
 
-        {selectedLink && streamStarted && (
-          <iframe
-            key={selectedLink.id}
-            src={selectedLink.iframe}
-            title={`${match.title} - ${selectedLink.label}`}
-            allow="fullscreen; picture-in-picture"
-            allowFullScreen
-            onLoad={() => setFrameLoaded(true)}
-            className="absolute inset-0 z-0 h-full w-full border-0 bg-transparent"
-          />
-        )}
-
-        <header
-          className={`pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-4 bg-gradient-to-b from-black/80 to-transparent px-4 pb-12 pt-4 transition-opacity duration-300 sm:px-7 sm:pt-6 ${controlsVisible ? "opacity-100" : "opacity-0"}`}
-          aria-hidden={!controlsVisible}
-          inert={!controlsVisible}
-        >
-          <button
-            type="button"
-            onClick={() => navigate(`/${location.search}`)}
-            aria-label="Back to events"
-            className="pointer-events-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition hover:bg-white/15"
+        {/* ── LEFT: video player ────────────────────────────────────────── */}
+        <div className="min-w-0 flex-1">
+          <div
+            className="relative w-full overflow-hidden rounded-xl bg-[#0a0a0a] shadow-[0_4px_60px_rgba(0,0,0,0.7)]"
+            style={{ aspectRatio: "16/9" }}
           >
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="m15 18-6-6 6-6M9 12h12" />
-            </svg>
-          </button>
-          <div className="min-w-0 flex-1 text-right">
-            <div className="mb-1 flex items-center justify-end gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-white/65">
+            {/* Poster */}
+            <img
+              key={posterUrl}
+              src={posterUrl}
+              alt=""
+              aria-hidden="true"
+              onError={() => {
+                if (posterIndex < posterCandidates.length - 1) {
+                  setFailedPoster({ matchId: match.id, imageIndex: posterIndex + 1 });
+                }
+              }}
+              className="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
+              style={{ opacity: frameLoaded ? 0 : 1 }}
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"
+              style={{ opacity: frameLoaded ? 0 : 1 }}
+            />
+
+            {/* Iframe (mounts only after play is clicked) */}
+            {selectedLink && streamStarted && (
+              <iframe
+                key={selectedLink.id}
+                src={selectedLink.iframe}
+                title={`${match.title} stream`}
+                allow="fullscreen; picture-in-picture"
+                allowFullScreen
+                onLoad={() => setFrameLoaded(true)}
+                className="absolute inset-0 z-10 h-full w-full border-0 bg-black"
+              />
+            )}
+
+            {/* Play gate */}
+            {!streamStarted && selectedLink && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-6 text-center">
+                {isLive && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-red-600/90 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-sm">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                    Live
+                  </span>
+                )}
+                <h2 className="max-w-md text-xl font-black leading-tight text-white drop-shadow-lg sm:text-3xl">
+                  {match.title}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setStreamStarted(true)}
+                  className="mt-1 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400 text-black shadow-[0_0_48px_rgba(52,211,153,.55)] transition-all duration-200 hover:scale-110 hover:bg-emerald-300 active:scale-95"
+                  aria-label="Play stream"
+                >
+                  <svg className="ml-1 h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* No stream */}
+            {!selectedLink && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center text-sm text-white/50">
+                No streaming links available for this event yet.
+              </div>
+            )}
+
+            {/* Connecting spinner */}
+            {streamStarted && !frameLoaded && selectedLink && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3">
+                <span className="h-9 w-9 animate-spin rounded-full border-2 border-white/10 border-t-emerald-400" />
+                <span className="text-[11px] font-bold uppercase tracking-widest text-white/50">
+                  Connecting…
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── RIGHT: info + feeds sidebar ──────────────────────────────── */}
+        <aside className="flex shrink-0 flex-col gap-0 overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.025] lg:sticky lg:top-[calc(72px+2rem)] lg:w-[340px] xl:w-[380px]">
+
+          {/* Match info block */}
+          <div className="px-5 pb-4 pt-5">
+            {/* Status + category row */}
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               {isLive && (
-                <span className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,.8)]" />
+                <span className="flex items-center gap-1.5 rounded-full bg-red-600/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-red-400 ring-1 ring-red-500/25">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+                  Live
+                </span>
               )}
-              <span>{match.category}</span>
-              <span className="text-white/30">/</span>
-              <span>{selectedLink?.label || "No feed available"}</span>
-            </div>
-            <h1 className="truncate text-lg font-bold text-white drop-shadow-md sm:text-2xl">
-              {match.title}
-            </h1>
-            <p className="mt-1 text-xs text-white/60">{formattedDate}</p>
-          </div>
-        </header>
-
-        {!selectedLink && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center text-white/75">
-            No streaming links are available for this event.
-          </div>
-        )}
-
-        {selectedLink && !streamStarted && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-6 text-center">
-            <div className="flex max-w-lg flex-col items-center">
-              <span className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-white/65">
+              {!isLive && match.status === "upcoming" && (
+                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-400 ring-1 ring-amber-500/20">
+                  Upcoming
+                </span>
+              )}
+              <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 {match.category}
               </span>
-              <h2 className="mb-7 text-3xl font-black leading-tight text-white drop-shadow-lg sm:text-5xl">
-                {match.title}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setStreamStarted(true)}
-                className="pointer-events-auto flex min-h-14 items-center gap-3 rounded-full bg-emerald-400 px-7 text-sm font-black uppercase tracking-wider text-black shadow-[0_8px_36px_rgba(16,185,129,.28)] transition hover:scale-[1.03] hover:bg-emerald-300"
-              >
-                <svg
-                  className="h-5 w-5"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                Play Stream
-              </button>
-              <p className="mt-4 text-xs text-white/60">{selectedLink.label}</p>
             </div>
-          </div>
-        )}
 
-        {streamStarted && !frameLoaded && selectedLink && (
-          <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center">
-            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-emerald-400" />
-            <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/75">
-              Connecting to {selectedLink.label}
-            </span>
-          </div>
-        )}
-
-        <footer
-          className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-4 pb-5 pt-16 transition-opacity duration-300 sm:px-7 sm:pb-7 ${controlsVisible ? "opacity-100" : "opacity-0"}`}
-          aria-hidden={!controlsVisible}
-          inert={!controlsVisible}
-        >
-          <div className="flex flex-col gap-3 pr-14 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0">
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/50">
-                Available feeds
+            {/* League */}
+            {match.tag && (
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                {match.tag}
               </p>
-              {match.streamLinks.length > 0 ? (
-                <div className="pointer-events-auto flex max-w-full gap-2 overflow-x-auto pb-1">
-                  {match.streamLinks.map((link, index) => {
-                    const active = selectedLink?.id === link.id;
-                    return (
-                      <button
-                        key={link.id}
-                        type="button"
-                        onClick={() => setSelectedLinkId(link.id)}
-                        aria-pressed={active}
-                        className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md border px-3 text-left transition ${active ? "border-emerald-300 bg-emerald-400 text-black" : "border-white/15 bg-black/55 text-white hover:bg-white/15"}`}
-                      >
-                        <span
-                          className={`flex h-6 w-6 items-center justify-center rounded-full ${active ? "bg-black/10" : "bg-white/10"}`}
-                        >
-                          <svg
-                            className="h-3.5 w-3.5"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                          >
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </span>
-                        <span className="flex flex-col">
-                          <span className="text-xs font-bold">
-                            {link.label || `Feed ${index + 1}`}
-                          </span>
-                          {link.isLive !== undefined && (
-                            <span
-                              className={`text-[9px] font-black uppercase ${active ? "text-black/60" : link.isLive ? "text-emerald-300" : "text-amber-300"}`}
-                            >
-                              {link.isLive ? "Live" : "Waiting"}
-                            </span>
-                          )}
-                          {link.locale && (
-                            <span
-                              className={`text-[10px] uppercase ${active ? "text-black/60" : "text-white/50"}`}
-                            >
-                              {link.locale}
-                            </span>
-                          )}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-white/60">
-                  No feeds published for this event.
-                </p>
-              )}
-            </div>
-            <div className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-white/50">
-              {match.streamLinks.length}{" "}
-              {match.streamLinks.length === 1 ? "feed" : "feeds"}
-            </div>
-          </div>
-        </footer>
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          aria-pressed={isFullscreen}
-          title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          className="pointer-events-auto absolute bottom-5 right-4 z-30 flex h-11 w-11 items-center justify-center bg-transparent text-white/85 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] hover:text-emerald-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300 sm:bottom-7 sm:right-7"
-        >
-          <svg
-            className="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            {isFullscreen ? (
-              <path d="M8 3v5H3m13-5v5h5M3 16h5v5m8-5h5v5" />
-            ) : (
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m8 0h3a2 2 0 0 0 2-2v-3" />
             )}
-          </svg>
-        </button>
+
+            {/* Title */}
+            <h1 className="text-lg font-black leading-tight text-white sm:text-xl">
+              {match.title}
+            </h1>
+
+            {/* Date */}
+            <p className="mt-2 text-xs text-zinc-500">{formattedDate}</p>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-5 border-t border-white/[0.07]" />
+
+          {/* Back button */}
+          <div className="px-5 py-3">
+            <button
+              type="button"
+              onClick={() => navigate(`/${location.search}`)}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold text-zinc-400 transition-all hover:bg-white/[0.05] hover:text-white active:scale-[.98]"
+            >
+              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+              </svg>
+              Back to events
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="mx-5 border-t border-white/[0.07]" />
+
+          {/* Feeds */}
+          <div className="flex flex-col gap-2.5 px-5 py-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-600">
+              Available feeds
+              {match.streamLinks.length > 0 && (
+                <span className="ml-2 rounded-full bg-white/[0.06] px-1.5 py-px font-bold text-zinc-500">
+                  {match.streamLinks.length}
+                </span>
+              )}
+            </p>
+
+            {match.streamLinks.length > 0 ? (
+              match.streamLinks.map((link, index) => (
+                <FeedCard
+                  key={link.id}
+                  link={link}
+                  index={index}
+                  active={selectedLink?.id === link.id}
+                  onSelect={setSelectedLinkId}
+                />
+              ))
+            ) : (
+              <p className="rounded-lg border border-white/[0.05] bg-white/[0.02] px-4 py-4 text-sm text-zinc-600">
+                No feeds published yet.
+              </p>
+            )}
+          </div>
+        </aside>
       </div>
     </MainLayout>
   );
