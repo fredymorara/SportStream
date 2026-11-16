@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Link,
   useLocation,
@@ -25,6 +25,34 @@ type CategoryId =
   | "baseball"
   | "football"
   | "other";
+
+interface Category {
+  id: CategoryId;
+  name: string;
+}
+
+const CATEGORIES: Category[] = [
+  { id: "home", name: "Home" },
+  { id: "football", name: "Football" },
+  { id: "live", name: "Live Now" },
+  { id: "upcoming", name: "Upcoming" },
+  { id: "basketball", name: "Basketball" },
+  { id: "baseball", name: "Baseball" },
+  { id: "other", name: "Others" },
+];
+
+const isCategoryActive = (id: CategoryId, sport: string) =>
+  id === "home" ? sport === "all" : sport === id;
+
+const scrollToTop = () => {
+  if (typeof window === "undefined") return;
+  // No matchMedia means no real layout/scrolling engine (e.g. jsdom in tests).
+  if (typeof window.matchMedia !== "function") return;
+  const reduced = window
+    .matchMedia("(prefers-reduced-motion: reduce)")
+    .matches;
+  window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+};
 
 const CategoryIcon: React.FC<{ categoryId: CategoryId }> = ({ categoryId }) => {
   if (categoryId === "home") {
@@ -137,6 +165,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(
     null,
   );
+  const bottomNavRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -144,15 +173,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { searchQuery, selectedSport } = useAppSelector(
     (state) => state.matches,
   );
-  const categories = [
-    { id: "home" as const, name: "Home" },
-    { id: "football" as const, name: "Football" },
-    { id: "live" as const, name: "Live Now" },
-    { id: "upcoming" as const, name: "Upcoming" },
-    { id: "basketball" as const, name: "Basketball" },
-    { id: "baseball" as const, name: "Baseball" },
-    { id: "other" as const, name: "Others" },
-  ];
 
   useEffect(() => {
     const urlSport = searchParams.get("sport") || "all";
@@ -160,6 +180,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     if (urlSport !== selectedSport) dispatch(setSelectedSport(urlSport));
     if (urlQuery !== searchQuery) dispatch(setSearchQuery(urlQuery));
   }, [dispatch, searchParams, selectedSport, searchQuery]);
+
+  // Keep the active phone-tab in view when the category changes or deep-linked.
+  useEffect(() => {
+    const container = bottomNavRef.current;
+    if (!container || typeof container.scrollTo !== "function") return;
+    const activeButton = container.querySelector<HTMLButtonElement>(
+      '[data-active="true"]',
+    );
+    if (!activeButton) return;
+    const left =
+      activeButton.offsetLeft - (container.clientWidth - activeButton.clientWidth) / 2;
+    container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
+  }, [selectedSport]);
 
   const updateUrl = (sport: string, query: string) => {
     const nextParams = new URLSearchParams();
@@ -173,12 +206,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     dispatch(setSelectedSport(nextSport));
     updateUrl(nextSport, searchQuery);
     if (location.pathname !== "/") navigate("/");
+    scrollToTop();
   };
 
   const goHome = () => {
     dispatch(setSelectedSport("all"));
     dispatch(setSearchQuery(""));
     setSearchParams({}, { replace: true });
+    scrollToTop();
   };
 
   const updateSearch = (query: string) => {
@@ -220,7 +255,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         }}
       />
       <header className="sticky top-0 z-40 border-b border-border bg-pitch/98 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md">
-        <div className="mx-auto max-w-[1800px] px-4 md:px-8">
+        <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-10">
           <div className="flex h-14 items-center justify-between gap-2 lg:h-[72px] lg:gap-4">
             <Link
               to="/"
@@ -244,29 +279,34 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               </span>
             </Link>
 
+            {/* Desktop: full category nav in the header */}
             <nav
               aria-label="Sports categories"
               className="hidden min-w-0 flex-1 justify-center gap-1 lg:flex"
             >
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  type="button"
-                  aria-pressed={
-                    category.id === "home"
-                      ? selectedSport === "all"
-                      : selectedSport === category.id
-                  }
-                  title={category.name}
-                  onClick={() => selectCategory(category.id)}
-                  className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "border-accent text-white" : "border-transparent text-muted hover:text-white"}`}
-                >
-                  <span className="h-4 w-4">
-                    <CategoryIcon categoryId={category.id} />
-                  </span>
-                  {category.name}
-                </button>
-              ))}
+              {CATEGORIES.map((category) => {
+                const active = isCategoryActive(category.id, selectedSport);
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    aria-label={category.name}
+                    aria-current={active ? "page" : undefined}
+                    title={category.name}
+                    onClick={() => selectCategory(category.id)}
+                    className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${
+                      active
+                        ? "border-accent text-white"
+                        : "border-transparent text-muted hover:text-white"
+                    }`}
+                  >
+                    <span className="h-4 w-4">
+                      <CategoryIcon categoryId={category.id} />
+                    </span>
+                    {category.name}
+                  </button>
+                );
+              })}
             </nav>
 
             <label className="relative block min-w-0 flex-1 lg:hidden">
@@ -337,37 +377,86 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </button>
           </div>
 
+          {/* Tablet: labelled category strip in the header */}
           <nav
             aria-label="Sports categories"
-            className="mobile-category-nav grid grid-cols-7 border-t border-border pt-1 lg:hidden"
+            className="mobile-category-nav hidden grid-cols-7 border-t border-border pt-1 sm:grid lg:hidden"
           >
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                aria-label={category.name}
-                title={category.name}
-                aria-pressed={
-                  category.id === "home"
-                    ? selectedSport === "all"
-                    : selectedSport === category.id
-                }
-                onClick={() => selectCategory(category.id)}
-                className={`flex min-h-12 min-w-0 touch-manipulation items-center justify-center rounded-md px-2 transition-colors focus-visible:bg-white/10 sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "bg-accent/10 text-accent" : "text-muted hover:bg-white/5 hover:text-white"}`}
-              >
-                <span className="h-5 w-5 shrink-0">
-                  <CategoryIcon categoryId={category.id} />
-                </span>
-                <span className="hidden max-w-full truncate text-[11px] font-semibold leading-none sm:inline">
-                  {category.name}
-                </span>
-              </button>
-            ))}
+            {CATEGORIES.map((category) => {
+              const active = isCategoryActive(category.id, selectedSport);
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  aria-label={category.name}
+                  aria-current={active ? "page" : undefined}
+                  title={category.name}
+                  onClick={() => selectCategory(category.id)}
+                  className={`flex min-h-14 min-w-0 touch-manipulation flex-col items-center justify-center gap-1 border-b-2 px-1 transition-colors focus-visible:bg-white/10 ${
+                    active
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-transparent text-muted hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <span className="h-5 w-5 shrink-0">
+                    <CategoryIcon categoryId={category.id} />
+                  </span>
+                  <span className="max-w-full truncate text-[11px] font-semibold leading-none">
+                    {category.name}
+                  </span>
+                </button>
+              );
+            })}
           </nav>
         </div>
       </header>
 
-      <main className="relative z-10 mx-auto w-full max-w-[1800px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+      {/* Phone: fixed, labelled category bar in thumb reach */}
+      <nav
+        aria-label="Sports categories"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-pitch/95 shadow-[0_-8px_28px_rgba(0,0,0,0.35)] backdrop-blur-md sm:hidden"
+      >
+        <div
+          ref={bottomNavRef}
+          className="hide-scrollbar relative flex snap-x snap-mandatory gap-1 overflow-x-auto px-2 pt-1"
+          style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+        >
+          {CATEGORIES.map((category) => {
+            const active = isCategoryActive(category.id, selectedSport);
+            return (
+              <button
+                key={category.id}
+                type="button"
+                data-active={active}
+                aria-label={category.name}
+                aria-current={active ? "page" : undefined}
+                title={category.name}
+                onClick={() => selectCategory(category.id)}
+                className={`relative flex min-w-[64px] shrink-0 snap-center flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors focus-visible:bg-white/10 ${
+                  active
+                    ? "bg-accent/15 text-accent"
+                    : "text-muted active:bg-white/5"
+                }`}
+              >
+                {active && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1/2 top-0 h-[3px] w-7 -translate-x-1/2 rounded-full bg-accent"
+                  />
+                )}
+                <span className="h-[22px] w-[22px] shrink-0">
+                  <CategoryIcon categoryId={category.id} />
+                </span>
+                <span className="max-w-full truncate text-[11px] font-semibold leading-none">
+                  {category.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+
+      <main className="relative z-10 mx-auto w-full max-w-[1800px] px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-6 sm:px-6 sm:pb-6 sm:pt-6 lg:px-10 lg:pb-8 lg:pt-8">
         {children}
       </main>
     </div>

@@ -423,7 +423,7 @@ const HomePage: React.FC = () => {
       {/* Footer */}
       <footer className="mt-20 pt-8 pb-12 border-t border-border/50 flex flex-col md:flex-row items-center justify-between text-muted text-sm gap-4">
         <p>© {new Date().getFullYear()} SportStream. Educational project.</p>
-        <p className="text-center md:text-right">
+        <p className="text-center text-pretty md:text-right">
           Events and streams are provided by third-party sources. SportStream
           does not host or provide streams.
         </p>

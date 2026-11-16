@@ -50,16 +50,24 @@ such as `bg-surface`, `text-muted`, and `border-border`.
 ## Layout & responsiveness
 
 - Content max width `1800px`, with `px-4` → `sm:px-6` → `lg:px-10` gutters.
-- Header is sticky (`h-14` mobile, `lg:h-[72px]`), with desktop category nav and
-  a 7-column mobile category bar (Home, Football, Live, Upcoming, Basketball,
-  Baseball, Others).
+- Header is sticky (`h-14` phone/tablet, `lg:h-[72px]`) and holds the logo and
+  search. Category navigation adapts by width:
+  - **Phone (< 640px):** a fixed, labelled bottom tab bar in thumb reach. It is
+    horizontally scrollable with snap, keeps the active tab centred, and clears
+    page content via bottom padding. The header stays a single compact row.
+  - **Tablet (640–1023px):** a labelled 7-column category strip in the header.
+  - **Desktop (≥ 1024px):** the full icon + label category nav in the header.
+  - Categories are always Home, Football, Live Now, Upcoming, Basketball,
+    Baseball, Others; active state uses the accent colour plus an accent bar.
+  - Selecting a category (or the logo) also returns the page to the top.
 - Match grid: 1 → 2 → 3 → 4 → 5 columns (`sm`/`lg`/`xl`/`2xl`), using
   `content-visibility: auto` for long lists.
-- Touch targets: ≥ 44px for search fields and category buttons
-  (`min-h-12`/`min-h-14` mobile nav).
+- Touch targets: ≥ 44px for search fields and category buttons; phone tabs are
+  ~52px tall and 64px wide, tablet tabs `min-h-14`.
 - Player: 16:9 video with a sticky info/feed sidebar (`lg:w-[340px]`,
   `xl:w-[380px]`) that stacks below the video on mobile.
-- Safe-area padding is applied to the mobile category bar.
+- Safe-area padding (`viewport-fit=cover`) is applied to the fixed phone nav and
+  to the page's bottom spacing so content clears the home indicator.
 
 ## Status & state semantics
 

@@ -64,6 +64,7 @@ describe("HomePage navigation and filtering", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("isolates football events and persists the filter in the URL", async () => {
@@ -95,6 +96,19 @@ describe("HomePage navigation and filtering", () => {
     );
     expect(screen.getByTestId("location")).toHaveTextContent("/");
     expect(screen.getByRole("button", { name: "Watch Now" })).toBeVisible();
+  });
+
+  it("returns to the top when a category is selected", async () => {
+    const user = userEvent.setup();
+    const scrollTo = vi.fn();
+    vi.stubGlobal("matchMedia", () => ({ matches: false }));
+    vi.stubGlobal("scrollTo", scrollTo);
+    renderHome();
+
+    await screen.findAllByRole("heading", { name: "North FC vs South FC" });
+    await user.click(screen.getAllByRole("button", { name: "Football" })[0]);
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
 
   it("activates match cards with the keyboard", async () => {
