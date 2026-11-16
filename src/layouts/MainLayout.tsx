@@ -217,7 +217,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
   if (fullViewport) {
     return (
-      <div className="h-[100dvh] w-full overflow-hidden bg-black text-slate-100">
+      <div className="h-[100dvh] w-full overflow-hidden bg-[#08090c] text-slate-100">
         <main className="h-full w-full min-w-0 overflow-hidden">
           {children}
         </main>
@@ -226,7 +226,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-black text-slate-100">
+    <div className="relative min-h-screen w-full bg-[#08090c] text-slate-100">
       <div
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center"
@@ -235,7 +235,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             "linear-gradient(rgba(0, 0, 0, .66), rgba(0, 0, 0, .82)), url('/sports_placeholder.png')",
         }}
       />
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#09090b]/95 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md">
+      <header className="sticky top-0 z-40 border-b border-[#1f2432] bg-[#08090c]/98 shadow-[0_8px_24px_rgba(0,0,0,0.22)] backdrop-blur-md">
         <div className="mx-auto max-w-[1800px] px-4 md:px-8">
           <div className="flex h-14 items-center justify-between gap-2 lg:h-[72px] lg:gap-4">
             <Link
@@ -244,7 +244,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               aria-label="SportStream home"
               className="flex shrink-0 items-center gap-2.5 text-white"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded bg-emerald-400 text-black">
+              <span className="flex h-8 w-8 items-center justify-center rounded bg-[#00f076] text-[#041a0e]">
                 <svg
                   className="h-5 w-5"
                   fill="currentColor"
@@ -275,7 +275,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   }
                   title={category.name}
                   onClick={() => selectCategory(category.id)}
-                  className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "border-emerald-400 text-white" : "border-transparent text-zinc-400 hover:text-white"}`}
+                  className={`flex min-h-10 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold transition-colors ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "border-[#00f076] text-white" : "border-transparent text-[#8892a4] hover:text-white"}`}
                 >
                   <span className="h-4 w-4">
                     <CategoryIcon categoryId={category.id} />
@@ -287,7 +287,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
             <label className="relative block min-w-0 flex-1 lg:hidden">
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4a5568]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -305,13 +305,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="search-input h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
+                className="search-input h-10 w-full rounded-md border border-[#1f2432] bg-[#111319] pl-9 pr-3 text-sm text-white placeholder:text-[#4a5568] transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
             <label className="relative hidden w-[min(24vw,220px)] shrink-0 lg:block">
               <svg
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4a5568]"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -329,7 +329,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 onChange={(event) => updateSearch(event.target.value)}
                 placeholder="Search events"
                 aria-label="Search events"
-                className="search-input h-10 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white placeholder:text-zinc-500 transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
+                className="search-input h-10 w-full rounded-md border border-[#1f2432] bg-[#111319] pl-9 pr-3 text-sm text-white placeholder:text-[#4a5568] transition-colors focus:border-white/30 focus:bg-white/[0.08] focus:outline-none"
               />
             </label>
 
@@ -338,7 +338,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               onClick={installApp}
               aria-label="Install SportStream"
               title="Install SportStream"
-              className={`${installPrompt ? "flex" : "hidden"} h-10 w-10 shrink-0 items-center justify-center rounded-md border border-emerald-400/40 bg-emerald-400/10 text-emerald-300`}
+              className={`${installPrompt ? "flex" : "hidden"} h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#00f076]/30 bg-[#00f076]/10 text-[#00f076]`}
             >
               <svg
                 className="h-5 w-5"
@@ -355,7 +355,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
           <nav
             aria-label="Sports categories"
-            className="mobile-category-nav grid grid-cols-6 border-t border-white/10 pt-1 lg:hidden"
+            className="mobile-category-nav grid grid-cols-6 border-t border-[#1f2432] pt-1 lg:hidden"
           >
             {categories.map((category) => (
               <button
@@ -369,7 +369,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     : selectedSport === category.id
                 }
                 onClick={() => selectCategory(category.id)}
-                className={`flex min-h-12 min-w-0 touch-manipulation items-center justify-center rounded-md px-2 transition-colors focus-visible:bg-white/10 sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "bg-emerald-400/10 text-emerald-300" : "text-zinc-400 hover:bg-white/5 hover:text-white"}`}
+                className={`flex min-h-12 min-w-0 touch-manipulation items-center justify-center rounded-md px-2 transition-colors focus-visible:bg-white/10 sm:min-h-14 sm:flex-col sm:gap-1 ${(category.id === "home" ? selectedSport === "all" : selectedSport === category.id) ? "bg-[#00f076]/10 text-[#00f076]" : "text-[#8892a4] hover:bg-white/5 hover:text-white"}`}
               >
                 <span className="h-5 w-5 shrink-0">
                   <CategoryIcon categoryId={category.id} />

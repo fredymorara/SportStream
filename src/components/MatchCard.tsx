@@ -21,7 +21,6 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
   const imageUrl = imageSources[imageIndex] || PLACEHOLDER_IMAGE_URL;
   const openMatch = () =>
     navigate(`/watch/${encodeURIComponent(match.uriName)}${location.search}`);
-  const sportName = match.category || "Match";
   const isLive = match.status?.toLowerCase() === "live";
 
   return (
@@ -38,67 +37,62 @@ const MatchCard: React.FC<MatchCardProps> = ({ match }) => {
         }
       }}
     >
-      {/* Thumbnail Container */}
+      {/* Thumbnail */}
       <div
-        className="relative aspect-video overflow-hidden rounded-xl bg-zinc-900 bg-cover bg-center ring-1 ring-inset ring-white/10 transition-[box-shadow] duration-300 group-hover:ring-white/25"
-        style={{ backgroundImage: `url(${PLACEHOLDER_IMAGE_URL})` }}
+        className="relative aspect-video overflow-hidden rounded-lg bg-[#111319] ring-1 ring-inset ring-[#1f2432] transition-[ring-color] duration-200 group-hover:ring-[#2e3547]"
+        style={{ backgroundImage: `url(${PLACEHOLDER_IMAGE_URL})`, backgroundSize: "cover" }}
       >
         <img
           src={imageUrl}
-          alt={`${match.title}`}
+          alt={match.title}
           className="h-full w-full object-cover"
           loading="lazy"
           decoding="async"
           onError={() =>
-            setImageIndex((index) =>
-              index < imageSources.length - 1 ? index + 1 : index,
-            )
+            setImageIndex((i) => (i < imageSources.length - 1 ? i + 1 : i))
           }
         />
 
-        {/* Play Button Overlay */}
-        <div className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-white">
-          <svg
-            className="ml-0.5 h-4 w-4"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
+        {/* Play icon bottom-right */}
+        <div className="absolute bottom-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+          <svg className="ml-0.5 h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
           </svg>
         </div>
 
-        {/* Top Badges overlaying image slightly */}
-        <div className="absolute top-2 left-2 right-2 flex justify-between items-start pointer-events-none">
+        {/* Status badge */}
+        <div className="absolute top-2 left-2">
           {isLive ? (
-            <div className="bg-red-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-white"></span>
-              LIVE
-            </div>
+            <span className="flex items-center gap-1.5 rounded bg-[#ff2d55] px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              Live
+            </span>
           ) : match.status === "upcoming" ? (
-            <div className="bg-black/60 backdrop-blur-sm text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded shadow-sm">
-              UPCOMING
-            </div>
-          ) : (
-            <div></div>
-          )}
+            <span className="rounded bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/80">
+              Upcoming
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {/* Details Container (below image) */}
-      <div className="flex flex-col gap-1">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold uppercase tracking-wider text-zinc-400">
-          <span className={isLive ? "text-red-400" : "text-zinc-400"}>
-            {sportName}
+      {/* Details */}
+      <div className="flex flex-col gap-1 px-0.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-bold uppercase tracking-wider">
+          <span className={isLive ? "text-[#ff2d55]" : "text-[#4a5568]"}>
+            {match.category || "Sport"}
           </span>
-          <span>•</span>
-          <span>{formattedDate}</span>
+          <span className="text-[#2e3547]">·</span>
+          <span className="text-[#4a5568]">{formattedDate}</span>
         </div>
-        <h3 className="text-pretty break-words text-sm font-bold leading-snug text-white group-hover:text-blue-300 sm:text-base">
+        <h3 className="text-pretty break-words text-sm font-bold leading-snug text-[#f1f5f9] transition-colors duration-150 group-hover:text-[#00f076] sm:text-base">
           {match.title}
         </h3>
+        {match.tag && (
+          <p className="truncate text-[11px] text-[#4a5568]">{match.tag}</p>
+        )}
       </div>
     </div>
   );
 };
 
-export default React.memo(MatchCard);
+export default MatchCard;

@@ -6,11 +6,54 @@ import { formatEventDate } from "../utils/formatDate";
 
 interface HeroSectionProps {
   featuredMatch: APIMatch | null;
+  otherLive?: APIMatch[];
 }
 
 const PLACEHOLDER_IMAGE_URL = "/sports_placeholder.png";
 
-const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
+/** Parse "Team A vs Team B" → ["Team A", "Team B"]. Returns null if not a matchup. */
+function parseMatchup(title: string): [string, string] | null {
+  const match = title.match(
+    /^(.+?)\s+(?:vs?\.?|versus|@)\s+(.+)$/i,
+  );
+  if (!match) return null;
+  return [match[1].trim(), match[2].trim()];
+}
+
+/** Compact live-match chip for the "other live" strip */
+const LiveChip: React.FC<{ match: APIMatch }> = ({ match }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        navigate(`/watch/${encodeURIComponent(match.uriName)}${location.search}`)
+      }
+      className="flex shrink-0 flex-col gap-1.5 rounded-lg border border-[#1f2432] bg-[#111319] p-3 text-left transition-all hover:border-[#2e3547] hover:bg-[#171a23] active:scale-[.98]"
+      style={{ minWidth: "160px", maxWidth: "200px" }}
+    >
+      <div className="flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff2d55]" />
+        <span className="text-[9px] font-black uppercase tracking-widest text-[#ff2d55]">Live</span>
+        <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide text-[#4a5568]">
+          {match.category}
+        </span>
+      </div>
+      <p className="line-clamp-2 text-xs font-bold leading-snug text-[#f1f5f9]">
+        {match.title}
+      </p>
+      {match.tag && (
+        <p className="truncate text-[10px] text-[#4a5568]">{match.tag}</p>
+      )}
+    </button>
+  );
+};
+
+const HeroSection: React.FC<HeroSectionProps> = ({
+  featuredMatch,
+  otherLive = [],
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [failedImage, setFailedImage] = useState<{
@@ -18,123 +61,154 @@ const HeroSection: React.FC<HeroSectionProps> = ({ featuredMatch }) => {
     imageIndex: number;
   } | null>(null);
 
+  /* ── empty state ── */
   if (!featuredMatch) {
     return (
-      <div className="w-full bg-zinc-900/50 rounded-xl border border-white/5 p-12 text-center text-zinc-400 mb-12 flex flex-col items-center justify-center min-h-[40vh]">
-        <h2 className="text-3xl font-bold text-white mb-4">
-          Welcome to SportStream
-        </h2>
-        <p className="mb-6 max-w-md">
-          Your home for live sports and upcoming events.
-        </p>
-        <button
-          className="bg-emerald-500 text-black font-semibold py-2.5 px-6 rounded-md hover:bg-emerald-400 transition-colors"
-          onClick={() => navigate("/")}
-        >
-          Explore Matches
-        </button>
+      <div className="mb-10 flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-[#1f2432] bg-[#111319] px-8 text-center">
+        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-[#1f2432] bg-[#08090c]">
+          <svg className="h-7 w-7 text-[#4a5568]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+          </svg>
+        </div>
+        <h2 className="mb-2 text-xl font-black text-[#f1f5f9]">No events right now</h2>
+        <p className="text-sm text-[#4a5568]">Check back soon — events go live closer to kick-off.</p>
       </div>
     );
   }
 
-  const formattedDate = formatEventDate(featuredMatch.date, {
-    weekday: "long",
-  });
-  const openMatch = () =>
-    navigate(
-      `/watch/${encodeURIComponent(featuredMatch.uriName)}${location.search}`,
-    );
-
   const imageSources = api.getPosterCandidates(featuredMatch);
   const imageIndex =
     failedImage?.matchId === featuredMatch.id ? failedImage.imageIndex : 0;
-  const backgroundImage = imageSources[imageIndex] || PLACEHOLDER_IMAGE_URL;
-  const isLive = featuredMatch.status?.toLowerCase() === "live";
+  const bgImage = imageSources[imageIndex] || PLACEHOLDER_IMAGE_URL;
+
+  const isLive = featuredMatch.status === "live";
+  const formattedDate = formatEventDate(featuredMatch.date, { weekday: "long" });
+  const matchup = parseMatchup(featuredMatch.title);
+
+  const openFeatured = () =>
+    navigate(`/watch/${encodeURIComponent(featuredMatch.uriName)}${location.search}`);
 
   return (
-    <div className="mb-12 flex w-full flex-col gap-6 lg:flex-row">
-      {/* Main Image Area */}
+    <div className="mb-10">
+      {/* ── Main hero card ───────────────────────────────────────────── */}
       <div
-        className="flex-1 relative aspect-video lg:aspect-auto lg:h-[450px] bg-zinc-900 rounded-xl overflow-hidden cursor-pointer group"
-        role="button"
-        tabIndex={0}
-        aria-label={`Watch ${featuredMatch.title}`}
-        onClick={() =>
-          openMatch()
-        }
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            navigate(`/watch/${encodeURIComponent(featuredMatch.uriName)}`);
-          }
-        }}
+        className="relative w-full overflow-hidden rounded-xl"
+        style={{ minHeight: "clamp(320px, 42vw, 520px)" }}
       >
+        {/* Background image */}
         <img
-          src={backgroundImage}
-          alt={featuredMatch.title}
-          className="h-full w-full object-cover"
+          src={bgImage}
+          alt=""
+          aria-hidden="true"
           onError={() => {
-            if (imageIndex < imageSources.length - 1) {
-              setFailedImage({
-                matchId: featuredMatch.id,
-                imageIndex: imageIndex + 1,
-              });
-            }
+            if (imageIndex < imageSources.length - 1)
+              setFailedImage({ matchId: featuredMatch.id, imageIndex: imageIndex + 1 });
           }}
+          className="absolute inset-0 h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/20"></div>
 
-        {/* Play Button Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/20 bg-black/35 text-white">
-            <svg
-              className="w-8 h-8 text-white ml-1"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
-      </div>
+        {/* Gradient overlays — dark frame, keeps image readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
 
-      {/* Info Panel */}
-      <div className="lg:w-[400px] flex flex-col justify-end p-2 lg:p-4">
-        {isLive && (
-          <div className="flex items-center gap-2 mb-4">
-            <span className="h-2 w-2 rounded-full bg-red-500"></span>
-            <span className="text-red-500 text-xs font-bold uppercase tracking-wider">
-              Live Now
+        {/* Accessible activation button (screen-reader / keyboard users) */}
+        <button
+          type="button"
+          onClick={openFeatured}
+          aria-label={`Watch ${featuredMatch.title}`}
+          className="sr-only focus:not-sr-only focus:absolute focus:inset-0 focus:z-30 focus:flex focus:items-center focus:justify-center focus:bg-black/30 focus:text-white focus:outline-none"
+        >
+          Watch {featuredMatch.title}
+        </button>
+
+        {/* Content */}
+        <div className="relative flex h-full flex-col justify-between p-6 sm:p-8 lg:p-10"
+          style={{ minHeight: "clamp(320px, 42vw, 520px)" }}>
+
+          {/* Top row: badges */}
+          <div className="flex items-center gap-2.5">
+            {isLive ? (
+              <span className="flex items-center gap-1.5 rounded-full bg-[#ff2d55] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                Live Now
+              </span>
+            ) : (
+              <span className="rounded-full border border-white/20 bg-black/40 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-white/80">
+                Upcoming
+              </span>
+            )}
+            <span className="rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white/70">
+              {featuredMatch.category}
             </span>
           </div>
-        )}
 
-        <div className="flex items-center gap-2 mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-          <span className="text-white">
-            {featuredMatch.category || "Featured"}
-          </span>
-          <span>•</span>
-          <span>{formattedDate}</span>
-        </div>
+          {/* Center / bottom content */}
+          <div className="mt-auto max-w-2xl">
+            {/* League */}
+            {featuredMatch.tag && (
+              <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#00f076]">
+                {featuredMatch.tag}
+              </p>
+            )}
 
-        <h1 className="text-3xl lg:text-4xl font-bold text-white leading-tight mb-6">
-          {featuredMatch.title}
-        </h1>
+            {/* Title — matchup split or plain */}
+            {matchup ? (
+              <div className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+                <span className="text-3xl font-black leading-none text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
+                  {matchup[0]}
+                </span>
+                <span className="text-lg font-black text-white/40 sm:text-2xl">vs</span>
+                <span className="text-3xl font-black leading-none text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
+                  {matchup[1]}
+                </span>
+              </div>
+            ) : (
+              <h2 className="mb-5 max-w-xl text-3xl font-black leading-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
+                {featuredMatch.title}
+              </h2>
+            )}
 
-        <div className="flex flex-col sm:flex-row gap-3 mt-auto">
-          <button
-            className="flex-1 bg-emerald-500 text-black font-semibold py-3 px-6 rounded-md hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
-            onClick={() =>
-              openMatch()
-            }
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-            Watch Now
-          </button>
+            {/* Date */}
+            <p className="mb-6 text-sm font-medium text-white/60">{formattedDate}</p>
+
+            {/* CTA */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={openFeatured}
+                className="flex items-center gap-2.5 rounded-lg bg-[#00f076] px-6 py-3 text-sm font-black uppercase tracking-wider text-[#041a0e] shadow-[0_0_32px_rgba(0,240,118,.35)] transition-all hover:scale-[1.03] hover:bg-[#0df27e] hover:shadow-[0_0_48px_rgba(0,240,118,.5)] active:scale-100"
+              >
+                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
+                Watch Now
+              </button>
+              {otherLive.length > 0 && (
+                <span className="text-sm font-semibold text-white/50">
+                  +{otherLive.length} more live
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* ── Other live strip ─────────────────────────────────────────── */}
+      {otherLive.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-3 flex items-center gap-2">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff2d55]" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#4a5568]">
+              Also live
+            </p>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+            {otherLive.map((m) => (
+              <LiveChip key={m.id} match={m} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

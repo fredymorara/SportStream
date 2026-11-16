@@ -236,6 +236,14 @@ const HomePage: React.FC = () => {
     return null;
   }, [rawMatches, filteredMatches]);
 
+  const otherLiveMatches = useMemo(
+    () =>
+      rawMatches
+        .filter((m) => m.status === "live" && m.id !== featuredMatch?.id)
+        .slice(0, 8),
+    [rawMatches, featuredMatch],
+  );
+
   if (loading && rawMatches.length === 0) {
     return (
       <MainLayout>
@@ -249,7 +257,7 @@ const HomePage: React.FC = () => {
   if (error && rawMatches.length === 0) {
     return (
       <MainLayout>
-        <div className="mt-8 flex min-h-[40vh] flex-col items-center justify-center border-t border-white/5 py-16 text-center">
+        <div className="mt-8 flex min-h-[40vh] flex-col items-center justify-center border-t border-[#1f2432]/50 py-16 text-center">
           <div className="bg-red-500/10 p-4 rounded-full mb-4">
             <svg
               className="w-8 h-8 text-red-500"
@@ -268,7 +276,7 @@ const HomePage: React.FC = () => {
           <p className="text-white text-lg font-bold mb-2">
             Failed to load content
           </p>
-          <p className="text-zinc-500 text-sm">{error}</p>
+          <p className="text-[#4a5568] text-sm">{error}</p>
           <button
             type="button"
             onClick={() =>
@@ -276,7 +284,7 @@ const HomePage: React.FC = () => {
                 fetchMatchesByStatus({ status: "all", forceRefresh: true }),
               )
             }
-            className="mt-6 rounded-md bg-emerald-400 px-5 py-2.5 text-sm font-bold text-black transition hover:bg-emerald-300"
+            className="mt-6 rounded-md bg-[#00f076] px-5 py-2.5 text-sm font-bold text-black transition hover:bg-[#0df27e]"
           >
             Try again
           </button>
@@ -345,9 +353,9 @@ const HomePage: React.FC = () => {
       )}
 
       {selectedSport === "all" ? (
-        <HeroSection featuredMatch={featuredMatch} />
+        <HeroSection featuredMatch={featuredMatch} otherLive={otherLiveMatches} />
       ) : (
-        <section className="mb-10 border-b border-white/10 pb-8">
+        <section className="mb-10 border-b border-[#1f2432] pb-8">
           <div className="flex items-end justify-between gap-4">
             <div>
               <h1 className="max-w-[14ch] text-balance text-5xl font-black leading-[0.95] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">
@@ -359,7 +367,7 @@ const HomePage: React.FC = () => {
                     ? "Other sports"
                     : `${selectedSport.charAt(0).toUpperCase()}${selectedSport.slice(1)} events`}
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+              <p className="mt-2 max-w-2xl text-sm text-[#8892a4]">
                 {selectedSport === "live"
                   ? "Follow every event currently in progress."
                   : selectedSport === "upcoming"
@@ -367,7 +375,7 @@ const HomePage: React.FC = () => {
                   : `Browse live and upcoming ${selectedSport === "other" ? "sports" : selectedSport} events in one place.`}
               </p>
             </div>
-            <span className="hidden shrink-0 text-sm font-medium text-zinc-500 sm:block">
+            <span className="hidden shrink-0 text-sm font-medium text-[#4a5568] sm:block">
               {categorizedSections.reduce(
                 (total, section) => total + section.matches.length,
                 0,
@@ -385,10 +393,10 @@ const HomePage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-24 flex flex-col items-center justify-center min-h-[40vh] border-t border-white/5 mt-8">
-          <div className="mb-4 bg-zinc-900 p-4 rounded-full">
+        <div className="text-center py-24 flex flex-col items-center justify-center min-h-[40vh] border-t border-[#1f2432]/50 mt-8">
+          <div className="mb-4 bg-[#111319] p-4 rounded-full">
             <svg
-              className="w-8 h-8 text-zinc-600"
+              className="w-8 h-8 text-[#4a5568]"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -406,23 +414,23 @@ const HomePage: React.FC = () => {
               ? "No matches found"
               : `No ${selectedSport === "other" ? "other sports" : selectedSport} events right now`}
           </p>
-          <p className="text-zinc-500 text-sm">
+          <p className="text-[#4a5568] text-sm">
             Try adjusting your search criteria or checking back later.
           </p>
         </div>
       )}
 
       {/* Footer */}
-      <footer className="mt-20 pt-8 pb-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-zinc-500 text-sm gap-4">
+      <footer className="mt-20 pt-8 pb-12 border-t border-[#1f2432]/50 flex flex-col md:flex-row items-center justify-between text-[#4a5568] text-sm gap-4">
         <p>© {new Date().getFullYear()} SportStream. All rights reserved.</p>
         <div className="flex items-center gap-6">
-          <a href="#" className="hover:text-emerald-400 transition-colors">
+          <a href="#" className="hover:text-[#00f076] transition-colors">
             Privacy Policy
           </a>
-          <a href="#" className="hover:text-emerald-400 transition-colors">
+          <a href="#" className="hover:text-[#00f076] transition-colors">
             Terms of Service
           </a>
-          <a href="#" className="hover:text-emerald-400 transition-colors">
+          <a href="#" className="hover:text-[#00f076] transition-colors">
             Contact
           </a>
         </div>
