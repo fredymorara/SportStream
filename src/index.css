@@ -60,8 +60,8 @@
   /* Signal palette — colour carries state, never decoration */
   --color-accent: #f5c518;
   --color-accent-hover: #ffd84a;
-  --color-signal: #ff3b30;
-  --color-live: #ff3b30;
+  --color-signal: #c81e2b;
+  --color-live: #c81e2b;
   --color-live-badge: #c0271f;
   --color-sky: #2b6cff;
 }
@@ -123,39 +123,26 @@ input:focus-visible,
   box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
-/* The one authored moment: a live ticker that never starts on every section. */
-@keyframes ticker-run {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+/* Mobile navigation sheets share one ground and one edge. */
+.mobile-panel {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  z-index: 40;
+  border-top: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-pitch) 98%, transparent);
+  backdrop-filter: blur(4px);
+  padding: 12px 16px 16px;
 }
 
+/* Live strip: user-scrollable, never auto-scrolling. */
 .ticker-mask {
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 3rem,
-    #000 calc(100% - 3rem),
-    transparent
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    #000 3rem,
-    #000 calc(100% - 3rem),
-    transparent
-  );
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
-
-.ticker-track {
-  animation: ticker-run 38s linear infinite;
-}
-
-.ticker-track:hover {
-  animation-play-state: paused;
+.ticker-mask::-webkit-scrollbar {
+  display: none;
 }
 
 /* Status lamps — state is carried by label and form as well as hue. */
@@ -219,11 +206,76 @@ input:focus-visible,
   background: var(--color-muted);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ticker-track {
-    animation: none;
-  }
+/* ---------------------------------------------------------------------------
+   Broadcast motion. One authored arrival — the score bug wipes on like a
+   lower-third: plates reveal from their outer edges toward the red VS, the VS
+   stamps, the clock resolves. Everything else is a short opacity change that
+   explains a state. No loops, no pulse, no auto-scroll.
+   --------------------------------------------------------------------------- */
 
+@keyframes scorebug-plate-left {
+  from { clip-path: inset(0 100% 0 0); opacity: 0; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes scorebug-plate-right {
+  from { clip-path: inset(0 0 0 100%); opacity: 0; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes scorebug-vs {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+@keyframes scorebug-strip {
+  from { clip-path: inset(0 0 100% 0); opacity: 0; }
+  to   { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+.scorebug__head {
+  animation: scorebug-strip 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.scorebug__plate--left {
+  animation: scorebug-plate-left 460ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+}
+
+.scorebug__plate--right {
+  animation: scorebug-plate-right 460ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+}
+
+.scorebug__vs {
+  animation: scorebug-vs 240ms cubic-bezier(0.16, 1, 0.3, 1) 320ms both;
+}
+
+.scorebug__meta {
+  animation: scorebug-strip 280ms cubic-bezier(0.16, 1, 0.3, 1) 220ms both;
+}
+
+@keyframes view-cut-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.view-cut {
+  animation: view-cut-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes signal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.player-connecting {
+  animation: signal-fade-in 200ms ease-out both;
+}
+
+.player-poster-veil {
+  transition: opacity 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .animate-spin,
   .loading-spinner * {
     animation: none !important;
@@ -239,5 +291,18 @@ input:focus-visible,
   [role="button"]:active,
   [class*="hover:scale-"]:hover {
     transform: none !important;
+  }
+
+  /* Keep the state and the words; drop the spatial arrival. */
+  .scorebug__head,
+  .scorebug__plate--left,
+  .scorebug__plate--right,
+  .scorebug__vs,
+  .scorebug__meta,
+  .player-connecting {
+    animation: none !important;
+    clip-path: none !important;
+    transform: none !important;
+    opacity: 1 !important;
   }
 }

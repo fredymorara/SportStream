@@ -88,7 +88,7 @@ const FixtureBoard: React.FC<FixtureBoardProps> = ({
                 type="button"
                 onClick={() => setSort(mode)}
                 aria-pressed={sort === mode}
-                className={`sig-stamp min-h-11 px-3 py-1.5 text-xs transition-colors sm:min-h-0 ${
+                className={`sig-stamp min-h-11 px-3 py-1.5 text-xs transition-colors ${
                   sort === mode
                     ? "bg-ink text-ink-inverse"
                     : "text-muted hover:text-ink"
@@ -121,10 +121,10 @@ const FixtureBoard: React.FC<FixtureBoardProps> = ({
                   type="button"
                   onClick={() => onSelect(match)}
                   aria-label={`Watch ${match.title}`}
-                  className="group grid w-full grid-cols-[44px_52px_minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-1 py-2.5 text-left transition-colors hover:bg-surface sm:grid-cols-[72px_76px_minmax(0,1fr)_160px_96px_104px] sm:gap-4"
+                  className="group grid w-full grid-cols-[48px_52px_minmax(0,1fr)_auto] items-center gap-2 border-b border-border px-1 py-2.5 text-left transition-colors hover:bg-surface md:grid-cols-[72px_76px_minmax(0,1fr)_160px_96px_104px] md:gap-4"
                 >
                   <span
-                    className={`font-display text-xl font-extrabold tabular-nums leading-none sm:text-2xl ${
+                    className={`font-display text-xl font-extrabold tabular-nums leading-none md:text-2xl ${
                       match.status === "live" ? "text-signal" : "text-ink"
                     }`}
                   >
@@ -133,11 +133,11 @@ const FixtureBoard: React.FC<FixtureBoardProps> = ({
 
                   <EventArt
                     match={match}
-                    className="h-10 w-[52px] sm:h-12 sm:w-[76px]"
+                    className="h-10 w-[52px] md:h-12 md:w-[76px]"
                   />
 
                   <span className="min-w-0">
-                    <span className="block truncate font-display text-lg font-bold uppercase leading-tight text-ink group-hover:text-accent sm:text-xl">
+                    <span className="block truncate font-display text-lg font-bold uppercase leading-tight text-ink group-hover:text-accent md:text-xl">
                       {match.title}
                     </span>
                     <span className="block truncate text-[11px] font-semibold uppercase tracking-wider text-muted">
@@ -149,14 +149,14 @@ const FixtureBoard: React.FC<FixtureBoardProps> = ({
                     </span>
                   </span>
 
-                  <span className="hidden truncate font-display text-sm font-semibold uppercase tracking-wider text-muted sm:block">
+                  <span className="hidden truncate font-display text-sm font-semibold uppercase tracking-wider text-muted md:block">
                     {match.tag || match.category}
                   </span>
-                  <span className="hidden font-display text-sm font-semibold uppercase tracking-wider text-muted sm:block">
+                  <span className="hidden font-display text-sm font-semibold uppercase tracking-wider text-muted md:block">
                     {match.streamLinks.length} {match.streamLinks.length === 1 ? "feed" : "feeds"}
                   </span>
                   <span
-                    className={`sig-stamp inline-flex justify-self-end px-1.5 py-1 text-[11px] sm:px-2 sm:text-xs ${stampClass(match.status)}`}
+                    className={`sig-stamp inline-flex justify-self-end px-1.5 py-1 text-[11px] md:px-2 md:text-xs ${stampClass(match.status)}`}
                   >
                     {stamp(match.status)}
                   </span>

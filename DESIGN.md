@@ -23,7 +23,7 @@ images the APIs return for events.
 | `--color-muted` | `#9aa0a8` | Secondary text; ≥ 4.5:1 on every ground |
 | `--color-accent` | `#f5c518` | Amber signal: clock, focus, primary action |
 | `--color-accent-hover` | `#ffd84a` | Accent hover |
-| `--color-signal` | `#ff3b30` | Live plates, lamps, large display only |
+| `--color-signal` | `#c81e2b` | Live plates, lamps, large display only |
 | `--color-live-badge` | `#c0271f` | White text on red: 5.6:1, used for small stamps |
 | `--color-sky` | `#2b6cff` | Secondary signal accent |
 
@@ -55,8 +55,14 @@ well as hue.
 - **Player** (`/watch/:id`): 16:9 well using the event poster behind the play
   gate, a compact score bug, and a sticky sidebar of stamped feed coupons.
   The iframe mounts only on play and keeps `allow="fullscreen; picture-in-picture"`.
-- Responsive: phone bottom tab bar and single-column board; tablet seven-tab
-  strip; desktop full rail. Touch targets ≥ 44px. Content max width 1800px.
+- Responsive: phone bottom tab bar and a compact four-column board (time,
+  thumbnail, fixture, status); the six-column board and seven-tab strip begin at
+  the tablet breakpoint (768px), so the fixture title is never crushed between
+  640–767px. Desktop keeps the full rail. Touch targets ≥ 44px at every width,
+  including touch-capable desktops. On phones the player gate (score bug and
+  play) sits in a flat field directly below the 16:9 well so the poster keeps its
+  aspect ratio; from the tablet breakpoint up it overlays the well. Content max
+  width 1800px.
 - Flat fields with one-pixel seams. No rounded card stacks, no nested cards,
   no offset shadows, no glass decoration.
 
@@ -72,9 +78,18 @@ evidence, not shipping assets.
 
 ## Motion
 
-One authored moment: the live ticker translates once, continuously, and pauses
-on hover. Reduced motion disables it. All other transitions are colour,
-border and opacity only. Status is never communicated by pulse alone.
+The live strip is user-scrollable, not auto-animated: it sits in a masked,
+touch-scrollable rail so the visitor controls the pace. There is one authored
+arrival — the score bug wipes on like a broadcast lower-third (`scorebug__*` in
+`src/index.css`): the status strip resolves, both plates reveal outward-in
+toward the red VS, the VS stamps, then the clock settles. It runs once per
+surface (landing, featured fixture, player), never per scrolled row. Supporting
+motion is a short opacity cut when the sport category changes (`view-cut`) and
+a crossfade of the player's poster veils into the stream with a faded-in
+"Connecting…" state (`player-poster-veil`, `player-connecting`). Status is never
+communicated by pulse alone; there are no loops, bounces, auto-scrolling or
+hover lifts. Reduced motion removes every spatial arrival while keeping the
+state and the words legible.
 
 ## Accessibility
 

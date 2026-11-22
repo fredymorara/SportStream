@@ -190,78 +190,80 @@ const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={retry}
-            className="sig-stamp w-fit border border-accent px-4 py-2 text-xs text-accent"
+            className="sig-stamp min-h-11 w-fit border border-accent px-4 text-xs text-accent"
           >
             Retry
           </button>
         </div>
       )}
 
-      {selectedSport === "all" && featuredMatch ? (
-        <section className="mb-6" aria-label="Featured fixture">
-          <div className="relative min-h-[clamp(360px,44vw,540px)] overflow-hidden border border-border">
-            <div className="absolute inset-0">
-              <EventArt match={featuredMatch} eager className="h-full w-full" imgClassName="scale-[1.02]">
-                <div className="absolute inset-0 bg-gradient-to-r from-pitch via-pitch/85 to-pitch/25" />
-                <div className="absolute inset-0 bg-gradient-to-t from-pitch via-transparent to-transparent" />
-              </EventArt>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => openMatch(featuredMatch)}
-              aria-label={`Watch ${featuredMatch.title}`}
-              className="sr-only focus:not-sr-only focus:absolute focus:inset-0 focus:z-30 focus:flex focus:items-center focus:justify-center focus:bg-pitch/70 focus:text-ink"
-            >
-              Watch {featuredMatch.title}
-            </button>
-
-            <div className="relative z-10 flex min-h-[clamp(360px,44vw,540px)] flex-col justify-between p-5 sm:p-8 lg:p-10">
-              <div className="flex items-center gap-3">
-                <span className="font-display text-xs font-bold uppercase tracking-[0.22em] text-accent">
-                  Featured fixture
-                </span>
-                <span className="h-px flex-1 bg-border-bright" />
-                <span className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-                  {featuredMatch.category}
-                </span>
+      <div key={selectedSport} className="view-cut">
+        {selectedSport === "all" && featuredMatch ? (
+          <section className="mb-6" aria-label="Featured fixture">
+            <div className="relative min-h-[clamp(360px,44vw,540px)] overflow-hidden border border-border">
+              <div className="absolute inset-0">
+                <EventArt match={featuredMatch} eager className="h-full w-full" imgClassName="scale-[1.02]">
+                  <div className="absolute inset-0 bg-gradient-to-r from-pitch via-pitch/85 to-pitch/25" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-pitch via-transparent to-transparent" />
+                </EventArt>
               </div>
-
-              <div className="max-w-3xl">
-                <ScoreBug match={featuredMatch} />
-                <div className="mt-6 flex flex-wrap items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => openMatch(featuredMatch)}
-                    className="sig-stamp bg-live-badge px-7 py-3 text-sm text-white hover:bg-signal"
-                  >
-                    Watch Now
-                  </button>
-                  <span className="font-display text-sm font-semibold uppercase tracking-wider text-muted">
-                    {featuredMatch.streamLinks.length} available feeds
+  
+              <button
+                type="button"
+                onClick={() => openMatch(featuredMatch)}
+                aria-label={`Watch ${featuredMatch.title}`}
+                className="sr-only focus:not-sr-only focus:absolute focus:inset-0 focus:z-30 focus:flex focus:items-center focus:justify-center focus:bg-pitch/70 focus:text-ink"
+              >
+                Watch {featuredMatch.title}
+              </button>
+  
+              <div className="relative z-10 flex min-h-[clamp(360px,44vw,540px)] flex-col justify-between p-5 sm:p-8 lg:p-10">
+                <div className="flex items-center gap-3">
+                  <span className="font-display text-xs font-bold uppercase tracking-[0.22em] text-accent">
+                    Featured fixture
                   </span>
+                  <span className="h-px flex-1 bg-border-bright" />
+                  <span className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                    {featuredMatch.category}
+                  </span>
+                </div>
+  
+                <div className="max-w-3xl">
+                  <ScoreBug match={featuredMatch} />
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <button
+                      type="button"
+                      onClick={() => openMatch(featuredMatch)}
+                      className="sig-stamp bg-live-badge px-7 py-3 text-sm text-white hover:bg-signal"
+                    >
+                      Watch Now
+                    </button>
+                    <span className="font-display text-sm font-semibold uppercase tracking-wider text-muted">
+                      {featuredMatch.streamLinks.length} available feeds
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      ) : (
-        <section className="mb-6 border-b-2 border-ink pb-5">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="max-w-[16ch] font-display text-5xl font-extrabold uppercase leading-[0.88] tracking-tight text-ink sm:text-6xl lg:text-7xl">
-                {titleFor(selectedSport)}
-              </h1>
-              <p className="mt-3 max-w-xl text-sm text-muted">
-                {subtitleFor(selectedSport)}
-              </p>
+          </section>
+        ) : (
+          <section className="mb-6 border-b-2 border-ink pb-5">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h1 className="max-w-[16ch] font-display text-5xl font-extrabold uppercase leading-[0.88] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+                  {titleFor(selectedSport)}
+                </h1>
+                <p className="mt-3 max-w-xl text-sm text-muted">
+                  {subtitleFor(selectedSport)}
+                </p>
+              </div>
+              <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-muted">
+                {filteredMatches.length} fixtures
+              </span>
             </div>
-            <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-muted">
-              {filteredMatches.length} fixtures
-            </span>
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+      </div>
 
       {selectedSport === "all" && (
         <div className="mb-8">
@@ -289,7 +291,7 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      <footer className="mt-16 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+      <footer className="mt-16 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between [text-wrap:pretty]">
         <p>© {new Date().getFullYear()} SportStream. Educational project.</p>
         <p>
           Events and streams are provided by third-party sources. SportStream does

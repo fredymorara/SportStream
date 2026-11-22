@@ -35,16 +35,18 @@ const ScoreBug: React.FC<ScoreBugProps> = ({
   const sides = parseMatchup(match.title);
   const left = sides?.[0] ?? match.title;
   const right = sides?.[1] ?? match.tag ?? match.category ?? "On air";
+  // On a phone the two plates still collide at the VS, but the crest and type
+  // step down so a long team name wraps at a space instead of mid-word.
   const crestSize = compact
-    ? "h-7 w-7 p-0.5 text-[11px]"
-    : "h-8 w-8 p-1 text-xs sm:h-12 sm:w-12 sm:p-1";
+    ? "h-6 w-6 p-0.5 text-[10px] sm:h-7 sm:w-7 sm:p-0.5 sm:text-[11px]"
+    : "h-6 w-6 p-0.5 text-[10px] sm:h-12 sm:w-12 sm:p-1";
   const nameClass = compact
-    ? "text-xl sm:text-2xl"
-    : "text-[clamp(1.5rem,4vw,3.25rem)]";
+    ? "text-base sm:text-2xl"
+    : "text-[clamp(1rem,4vw,3.25rem)]";
 
   return (
     <div className={className}>
-      <div className="mb-3 flex flex-wrap items-center gap-3">
+      <div className="scorebug__head mb-3 flex flex-wrap items-center gap-3">
         <span className={`sig-lamp px-3 py-1 text-xs ${statusClass(match.status)}`}>
           <span className="sig-lamp__dot" />
           {statusLabel(match.status)}
@@ -57,7 +59,7 @@ const ScoreBug: React.FC<ScoreBugProps> = ({
       <h2 className="sr-only">{match.title}</h2>
 
       <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch">
-        <div className="flex min-w-0 items-center justify-end gap-2 bg-ink py-2 pl-2 pr-2 text-right text-ink-inverse sm:gap-3 sm:py-4 sm:pl-4 sm:pr-3">
+        <div className="scorebug__plate scorebug__plate--left flex min-w-0 items-center justify-end gap-1.5 bg-ink py-2 pl-1.5 pr-1.5 text-right text-ink-inverse sm:gap-3 sm:py-4 sm:pl-4 sm:pr-3">
           <TeamCrest
             src={match.crests?.[0]}
             team={left}
@@ -73,12 +75,12 @@ const ScoreBug: React.FC<ScoreBugProps> = ({
 
         <div
           aria-hidden="true"
-          className="flex items-center bg-signal px-2 font-display text-lg font-extrabold text-white sm:px-4 sm:text-3xl"
+          className="scorebug__vs flex items-center bg-signal px-1.5 font-display text-lg font-extrabold text-white sm:px-4 sm:text-3xl"
         >
           VS
         </div>
 
-        <div className="flex min-w-0 items-center justify-start gap-2 border-l border-border-bright bg-surface py-2 pl-2 pr-2 text-left text-ink sm:gap-3 sm:py-4 sm:pr-4">
+        <div className="scorebug__plate scorebug__plate--right flex min-w-0 items-center justify-start gap-1.5 border-l border-border-bright bg-surface py-2 pl-1.5 pr-1.5 text-left text-ink sm:gap-3 sm:py-4 sm:pr-4">
           <span
             aria-hidden="true"
             className={`min-w-0 break-words font-display font-extrabold uppercase leading-[0.86] tracking-tight ${nameClass}`}
@@ -93,7 +95,7 @@ const ScoreBug: React.FC<ScoreBugProps> = ({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-border-bright pt-3">
+      <div className="scorebug__meta mt-3 flex flex-wrap items-end justify-between gap-3 border-t border-border-bright pt-3">
         <div>
           <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-muted">
             {match.status === "live" ? "On air" : "Kickoff"}

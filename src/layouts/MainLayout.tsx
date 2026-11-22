@@ -34,6 +34,12 @@ const CATEGORIES: { id: CategoryId; name: string }[] = [
 const isCategoryActive = (id: CategoryId, sport: string) =>
   id === "home" ? sport === "all" : sport === id;
 
+/** The sports tab names where you are, not a generic "home". */
+const sportTabLabel = (sport: string) => {
+  if (sport === "all" || sport === "live") return "sports";
+  return (CATEGORIES.find((category) => category.id === sport)?.name ?? "sports").toLowerCase();
+};
+
 const scrollToTop = () => {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -44,7 +50,8 @@ const SearchField: React.FC<{
   value: string;
   onChange: (value: string) => void;
   className?: string;
-}> = ({ value, onChange, className = "" }) => (
+  inputRef?: React.Ref<HTMLInputElement>;
+}> = ({ value, onChange, className = "", inputRef }) => (
   <label className={`relative block min-w-0 ${className}`}>
     <svg
       className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
@@ -61,6 +68,7 @@ const SearchField: React.FC<{
       />
     </svg>
     <input
+      ref={inputRef}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       placeholder="Search teams, competitions"
@@ -70,9 +78,17 @@ const SearchField: React.FC<{
   </label>
 );
 
+const CloseIcon: React.FC = () => (
+  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+    <path strokeLinecap="round" d="m6 6 12 12M18 6 6 18" />
+  </svg>
+);
+
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const bottomNavRef = useRef<HTMLDivElement>(null);
+  const [panel, setPanel] = useState<"sports" | "search" | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const sportsPanelRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -89,14 +105,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   }, [dispatch, searchParams, selectedSport, searchQuery]);
 
   useEffect(() => {
-    const container = bottomNavRef.current;
-    if (!container || typeof container.scrollTo !== "function") return;
-    const activeButton = container.querySelector<HTMLButtonElement>('[data-active="true"]');
-    if (!activeButton) return;
-    const left =
-      activeButton.offsetLeft - (container.clientWidth - activeButton.clientWidth) / 2;
-    container.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
-  }, [selectedSport]);
+    if (!panel) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPanel(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    if (panel === "search") searchInputRef.current?.focus();
+    if (panel === "sports") sportsPanelRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [panel]);
 
   useEffect(() => {
     const handleInstallPrompt = (event: Event) => {
@@ -124,6 +141,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     dispatch(setSelectedSport(nextSport));
     updateUrl(nextSport, searchQuery);
     if (location.pathname !== appPath) navigate(appPath);
+    setPanel(null);
     scrollToTop();
   };
 
@@ -132,6 +150,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     dispatch(setSearchQuery(""));
     setSearchParams({}, { replace: true });
     if (location.pathname !== appPath) navigate(appPath);
+    setPanel(null);
     scrollToTop();
   };
 
@@ -151,14 +170,31 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const tabClass = (active: boolean, compact = false) =>
     [
       "sig-stamp flex shrink-0 items-center justify-center border-b-2 transition-colors",
-      compact ? "min-h-14 flex-col gap-1 px-2 text-xs" : "min-h-10 px-3 text-sm",
+      compact ? "min-h-14 flex-col gap-1 px-2 text-xs" : "min-h-11 px-3 text-sm",
       active
         ? "border-accent bg-surface text-accent"
         : "border-transparent text-muted hover:text-ink",
     ].join(" ");
 
+  const mobileTabClass = (active: boolean) =>
+    [
+      "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 border-t-2 px-1 py-2",
+      "font-display text-sm font-semibold lowercase tracking-tight transition-colors",
+      active
+        ? "border-accent bg-surface text-accent"
+        : "border-transparent text-muted",
+    ].join(" ");
+
+  const panelClass = "mobile-panel sm:hidden";
+
   return (
     <div className="relative min-h-screen w-full bg-pitch text-ink">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:bg-accent focus:px-4 focus:py-2 focus:text-ink-inverse"
+      >
+        Skip to content
+      </a>
       <header className="sticky top-0 z-40 border-b border-border bg-pitch/95 backdrop-blur-sm">
         <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-10">
           <div className="flex h-14 items-center gap-3 lg:h-[72px] lg:gap-6">
@@ -198,7 +234,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             <SearchField
               value={searchQuery}
               onChange={updateSearch}
-              className="flex-1 lg:max-w-[260px]"
+              className="hidden flex-1 sm:block lg:max-w-[260px]"
             />
 
             {installPrompt && (
@@ -207,14 +243,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 onClick={installApp}
                 aria-label="Install SportStream"
                 title="Install SportStream"
-                className="hidden h-10 w-10 shrink-0 items-center justify-center border border-accent/40 text-accent sm:flex"
+                className="hidden h-11 w-11 shrink-0 items-center justify-center border border-accent/40 text-accent sm:flex"
               >
                 <svg
                   className="h-5 w-5"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth={2}
+                  strokeWidth="2"
                   aria-hidden="true"
                 >
                   <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" />
@@ -246,39 +282,100 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <nav
-        aria-label="Sports categories"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-pitch/95 backdrop-blur-sm sm:hidden"
-      >
-        <div
-          ref={bottomNavRef}
-          className="hide-scrollbar relative flex snap-x snap-mandatory gap-0 overflow-x-auto px-2 pt-1"
-          style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
-        >
-          {CATEGORIES.map((category) => {
-            const active = isCategoryActive(category.id, selectedSport);
-            return (
-              <button
-                key={category.id}
-                type="button"
-                data-active={active}
-                aria-label={category.name}
-                aria-current={active ? "page" : undefined}
-                onClick={() => selectCategory(category.id)}
-                className={`sig-stamp flex min-w-[76px] shrink-0 snap-center items-center justify-center border-b-2 px-2 py-3 text-xs ${
-                  active
-                    ? "border-accent bg-surface text-accent"
-                    : "border-transparent text-muted"
-                }`}
-              >
-                {category.name}
-              </button>
-            );
-          })}
+      {panel === "sports" && (
+        <div id="mobile-sports-panel" ref={sportsPanelRef} className={panelClass}>
+          <div className="flex items-center justify-between gap-3">
+            <p className="sig-stamp text-xs text-muted">Choose a sport</p>
+            <button
+              type="button"
+              onClick={() => setPanel(null)}
+              aria-label="Close sport list"
+              className="flex h-11 w-11 items-center justify-center border border-border text-muted"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {CATEGORIES.map((category) => {
+              const active = isCategoryActive(category.id, selectedSport);
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => selectCategory(category.id)}
+                  aria-current={active ? "page" : undefined}
+                  className={`sig-stamp min-h-11 border px-3 text-left text-xs ${
+                    active
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-border bg-surface text-ink"
+                  }`}
+                >
+                  {category.id === "home" ? "All sports" : category.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
+      )}
+
+      {panel === "search" && (
+        <div id="mobile-search-panel" className={panelClass}>
+          <div className="flex items-center gap-2">
+            <SearchField
+              value={searchQuery}
+              onChange={updateSearch}
+              inputRef={searchInputRef}
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => setPanel(null)}
+              aria-label="Close search"
+              className="flex h-11 w-11 shrink-0 items-center justify-center border border-border text-muted"
+            >
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <nav
+        aria-label="Main navigation"
+        className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-border bg-pitch/98 backdrop-blur-sm sm:hidden"
+      >
+        <button
+          type="button"
+          onClick={() => setPanel((current) => (current === "sports" ? null : "sports"))}
+          aria-expanded={panel === "sports"}
+          aria-controls={panel === "sports" ? "mobile-sports-panel" : undefined}
+          aria-label={`Change sport, currently ${sportTabLabel(selectedSport)}`}
+          className={mobileTabClass(panel === "sports" || (selectedSport !== "all" && selectedSport !== "live"))}
+        >
+          <span className="max-w-full truncate">{sportTabLabel(selectedSport)}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setPanel(null);
+            selectCategory("live");
+          }}
+          aria-current={selectedSport === "live" && !panel ? "page" : undefined}
+          className={mobileTabClass(selectedSport === "live" && !panel)}
+        >
+          live
+        </button>
+        <button
+          type="button"
+          onClick={() => setPanel((current) => (current === "search" ? null : "search"))}
+          aria-expanded={panel === "search"}
+          aria-controls={panel === "search" ? "mobile-search-panel" : undefined}
+          className={mobileTabClass(panel === "search")}
+        >
+          search
+        </button>
       </nav>
 
-      <main className="relative mx-auto w-full max-w-[1800px] px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-8 lg:px-10 lg:pt-7">
+      <main id="main-content" className="relative mx-auto w-full max-w-[1800px] px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:pb-8 lg:px-10 lg:pt-7">
         {children}
       </main>
     </div>

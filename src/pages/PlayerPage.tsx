@@ -160,40 +160,55 @@ const PlayerPage: React.FC = () => {
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
         <div className="min-w-0 flex-1">
-          <div
-            className="relative w-full overflow-hidden border border-border bg-pitch"
-            style={{ aspectRatio: "16/9" }}
-          >
-            <div className="absolute inset-0">
-              <EventArt match={match} eager className="h-full w-full" imgClassName="transition-opacity duration-500">
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-x-0 top-0 h-3/4 bg-gradient-to-b from-pitch/95 via-pitch/60 to-transparent"
-                  style={{ opacity: frameLoaded ? 0 : 1 }}
+          <div className="relative">
+            <div
+              className="relative w-full overflow-hidden border border-border bg-pitch"
+              style={{ aspectRatio: "16/9" }}
+            >
+              <div className="absolute inset-0">
+                <EventArt match={match} eager className="h-full w-full" imgClassName="transition-opacity duration-500">
+                  <div
+                    aria-hidden="true"
+                    className="player-poster-veil absolute inset-x-0 top-0 h-3/4 bg-gradient-to-b from-pitch/95 via-pitch/60 to-transparent"
+                    style={{ opacity: frameLoaded ? 0 : 1 }}
+                  />
+                  <div
+                    aria-hidden="true"
+                    className="player-poster-veil absolute inset-0 bg-gradient-to-t from-pitch/80 via-transparent to-transparent"
+                    style={{ opacity: frameLoaded ? 0 : 1 }}
+                  />
+                </EventArt>
+              </div>
+
+              {selectedLink && streamStarted && (
+                <iframe
+                  key={selectedLink.id}
+                  src={selectedLink.iframe}
+                  title={`${match.title} stream`}
+                  allow="fullscreen; picture-in-picture"
+                  allowFullScreen
+                  onLoad={() => setFrameLoaded(true)}
+                  className="absolute inset-0 z-10 h-full w-full border-0 bg-black"
                 />
-                <div
-                  aria-hidden="true"
-                  className="absolute inset-0 bg-gradient-to-t from-pitch/80 via-transparent to-transparent"
-                  style={{ opacity: frameLoaded ? 0 : 1 }}
-                />
-              </EventArt>
+              )}
+
+              {!selectedLink && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center text-sm text-muted">
+                  No streaming links available for this event yet.
+                </div>
+              )}
+
+              {streamStarted && !frameLoaded && selectedLink && (
+                <div className="player-connecting absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-pitch/80">
+                  <span className="h-9 w-9 animate-spin border-2 border-border-bright border-t-accent" />
+                  <span className="sig-stamp text-xs text-muted">Connecting…</span>
+                </div>
+              )}
             </div>
 
-            {selectedLink && streamStarted && (
-              <iframe
-                key={selectedLink.id}
-                src={selectedLink.iframe}
-                title={`${match.title} stream`}
-                allow="fullscreen; picture-in-picture"
-                allowFullScreen
-                onLoad={() => setFrameLoaded(true)}
-                className="absolute inset-0 z-10 h-full w-full border-0 bg-black"
-              />
-            )}
-
             {!streamStarted && selectedLink && (
-              <div className="absolute inset-0 z-20 flex flex-col justify-between p-5 sm:p-8">
-                <div className="max-w-2xl border border-border-bright bg-pitch/85 p-3 sm:p-4">
+              <div className="flex flex-col gap-4 border border-t-0 border-border bg-surface p-4 sm:absolute sm:inset-0 sm:z-20 sm:justify-between sm:gap-0 sm:border-transparent sm:bg-transparent sm:p-6 lg:p-8">
+                <div className="max-w-2xl sm:border sm:border-border-bright sm:bg-pitch/85 sm:p-4">
                   <ScoreBug match={match} compact />
                 </div>
                 <div className="flex items-center gap-4">
@@ -211,19 +226,6 @@ const PlayerPage: React.FC = () => {
                     Open feed
                   </span>
                 </div>
-              </div>
-            )}
-
-            {!selectedLink && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center px-6 text-center text-sm text-muted">
-                No streaming links available for this event yet.
-              </div>
-            )}
-
-            {streamStarted && !frameLoaded && selectedLink && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-pitch/80">
-                <span className="h-9 w-9 animate-spin border-2 border-border-bright border-t-accent" />
-                <span className="sig-stamp text-xs text-muted">Connecting…</span>
               </div>
             )}
           </div>

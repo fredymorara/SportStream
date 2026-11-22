@@ -80,10 +80,10 @@ const LandingPage: React.FC = () => {
       </a>
 
       <header className="sticky top-0 z-40 border-b border-border bg-pitch/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-6 px-4 sm:px-6 lg:px-10">
-          <Link to="/app" className="flex shrink-0 items-center gap-2.5" aria-label="SportStream home">
+        <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-10">
+          <Link to="/app" className="flex shrink-0 items-center gap-2.5" aria-label="Open the fixture board">
             <span aria-hidden="true" className="h-3 w-3 bg-signal" />
-            <span className="font-display text-3xl font-extrabold lowercase tracking-tight">
+            <span className="font-display text-2xl font-extrabold lowercase tracking-tight sm:text-3xl">
               sportstream
             </span>
           </Link>
@@ -94,7 +94,7 @@ const LandingPage: React.FC = () => {
           </nav>
           <Link
             to="/app"
-            className="sig-stamp ml-auto bg-accent px-5 py-2.5 text-xs text-ink-inverse hover:bg-accent-hover"
+            className="sig-stamp ml-auto bg-accent px-3 py-2.5 text-xs text-ink-inverse hover:bg-accent-hover sm:px-5"
           >
             Open the board
           </Link>
@@ -113,14 +113,14 @@ const LandingPage: React.FC = () => {
 
           <div className="relative mx-auto flex min-h-[clamp(500px,68vh,720px)] max-w-[1600px] flex-col justify-between px-4 pb-10 pt-12 sm:px-6 lg:px-10">
             {status === "error" ? (
-              <div className="my-auto max-w-xl border-l-2 border-signal pl-6">
+              <div className="my-auto max-w-xl border-l border-border-bright pl-6">
                 <span className="sig-stamp bg-live-badge px-3 py-1 text-xs text-white">
                   Signal lost
                 </span>
                 <h1 className="mt-5 font-display text-[clamp(3rem,8vw,6rem)] font-extrabold uppercase leading-[0.85] text-ink">
                   The fixture feed is off air
                 </h1>
-                <p className="mt-4 max-w-md text-sm text-muted">
+                <p className="mt-4 max-w-md text-sm text-muted [text-wrap:pretty]">
                   The upstream APIs did not respond. Retry, or open the board to
                   see the last available fixtures.
                 </p>
@@ -148,7 +148,7 @@ const LandingPage: React.FC = () => {
                     <br />
                     <span className="text-accent">See it on air.</span>
                   </h1>
-                  <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink/85 sm:text-lg">
+                  <p className="mt-5 max-w-2xl text-base leading-relaxed text-ink/85 sm:text-lg [text-wrap:pretty]">
                     SportStream pulls fixtures from two public APIs, groups them
                     by sport, and orders them by the nearest kickoff. Every
                     poster and crest below comes straight from those feeds.
@@ -268,7 +268,7 @@ const LandingPage: React.FC = () => {
               <h2 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-6xl">
                 Three steps
               </h2>
-              <p className="mt-4 max-w-md text-sm text-muted">
+              <p className="mt-4 max-w-md text-sm text-muted [text-wrap:pretty]">
                 No account, no setup. The board is built for the thirty seconds
                 before kickoff.
               </p>
@@ -309,7 +309,7 @@ const LandingPage: React.FC = () => {
               </div>
             ))}
           </div>
-          <p className="mt-12 border-l-2 border-signal pl-5 text-sm text-muted">
+          <p className="mt-12 border-l border-border-bright pl-5 text-sm text-muted">
             This is an educational project. SportStream does not create, host or
             provide streams; playback uses sources returned by third-party APIs.
           </p>

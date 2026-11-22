@@ -6,7 +6,7 @@ interface TickerProps {
   onSelect?: (match: APIMatch) => void;
 }
 
-/** A broadcast-style live strip; the single authored motion on the site. */
+/** A broadcast-style live strip. Scroll it horizontally to see more fixtures. */
 const Ticker: React.FC<TickerProps> = ({ matches, onSelect }) => {
   const live = matches.filter((match) => match.status === "live");
 
@@ -28,7 +28,7 @@ const Ticker: React.FC<TickerProps> = ({ matches, onSelect }) => {
       key={match.id}
       type="button"
       onClick={() => onSelect?.(match)}
-      className="flex shrink-0 items-center gap-3 border-r border-border px-5 py-2.5 text-left"
+      className="flex shrink-0 items-center gap-3 border-r border-border px-5 py-3 text-left"
     >
       <span className="sig-stamp bg-live-badge px-2 py-0.5 text-xs text-white">
         Live
@@ -47,28 +47,8 @@ const Ticker: React.FC<TickerProps> = ({ matches, onSelect }) => {
       <span className="z-10 flex shrink-0 items-center bg-live-badge px-4 font-display text-xs font-extrabold uppercase tracking-[0.16em] text-white">
         On air
       </span>
-      <div className="ticker-mask relative flex-1 overflow-hidden">
-        <div className="ticker-track flex w-max">
-          <div className="flex">{items}</div>
-          <div className="flex" aria-hidden="true">
-            {live.map((match) => (
-              <div
-                key={`echo-${match.id}`}
-                className="flex shrink-0 items-center gap-3 border-r border-border px-5 py-2.5"
-              >
-                <span className="sig-stamp bg-live-badge px-2 py-0.5 text-xs text-white">
-                  Live
-                </span>
-                <span className="font-display text-base font-bold uppercase tracking-wide text-ink">
-                  {match.title}
-                </span>
-                <span className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-accent">
-                  {match.tag || match.category}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div className="ticker-mask relative flex-1">
+        <div className="flex w-max">{items}</div>
       </div>
     </div>
   );

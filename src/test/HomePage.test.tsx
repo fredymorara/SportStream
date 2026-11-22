@@ -111,6 +111,44 @@ describe("HomePage navigation and filtering", () => {
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
 
+  it("opens and closes the mobile search panel from the bottom tab", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    const searchTab = screen.getByRole("button", { name: "search" });
+    expect(searchTab).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(searchTab);
+    expect(searchTab).toHaveAttribute("aria-expanded", "true");
+    expect(
+      screen.getAllByRole("textbox", { name: "Search events" }).length,
+    ).toBeGreaterThan(0);
+
+    await user.keyboard("{Escape}");
+    expect(searchTab).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("names the current sport in the mobile tab and switches from the sport sheet", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    await screen.findAllByRole("heading", { name: "North FC vs South FC" });
+    await user.click(screen.getAllByRole("button", { name: "Football" })[0]);
+
+    const sportsTab = screen.getByRole("button", {
+      name: "Change sport, currently football",
+    });
+    expect(sportsTab).toHaveTextContent("football");
+
+    await user.click(sportsTab);
+    await user.click(screen.getByRole("button", { name: "All sports" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Live sports fixtures" }),
+    ).toBeTruthy();
+    expect(screen.getByTestId("location")).toHaveTextContent("/app");
+  });
+
   it("activates match cards with the keyboard", async () => {
     const user = userEvent.setup();
     renderHome();
