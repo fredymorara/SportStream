@@ -9,13 +9,13 @@ interface LoadingSpinnerProps {
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = "96",
-  color = "#00f076",
+  color = "currentColor",
 }) => {
   const numericSize = size.replace(/\D/g, "") || "96";
-  const validColor = color.startsWith("#") ? color : "#00f076";
+  const validColor = color;
 
   return (
-    <div className="flex h-full w-full items-center justify-center p-4 min-h-[150px]">
+    <div className="flex min-h-[150px] h-full w-full items-center justify-center p-4 text-accent">
       <div
         role="status"
         aria-label="Loading"

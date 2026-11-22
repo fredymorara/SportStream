@@ -1,107 +1,90 @@
-# SportStream — Design System
+# SportStream — Broadcast Score Bug design system
 
-SportStream is a single-theme, dark sports-discovery interface. There is no light
-theme. This document is the source of truth for the visual language; colors are
-declared once as design tokens in `src/index.css` (`@theme` / `:root`) and used
-throughout components as Tailwind theme utilities rather than arbitrary hex.
+SportStream is a single-theme, dark, imagery-led sports interface. The visual
+world is a broadcast score bug laid over real event artwork supplied by the
+upstream APIs. There is no light theme. Tokens live once in `src/index.css`
+(`@theme` / `:root`) and are consumed as Tailwind theme utilities.
 
-## Color tokens
+This world replaced the earlier dark-card system and the metro-tile direction
+recorded in the previous surface brief. The user pin that drove it: use the
+images the APIs return for events.
 
-Defined in `src/index.css` under `@theme`, which generates Tailwind utilities
-such as `bg-surface`, `text-muted`, and `border-border`.
+## Colour tokens
 
-| Token | Value | Usage | Utility examples |
-|---|---|---|---|
-| `--color-pitch` | `#08090c` | App/page background, video surface | `bg-pitch` |
-| `--color-surface` | `#111319` | Cards, sidebar, inputs | `bg-surface` |
-| `--color-surface-elevated` | `#171a23` | Hover/inactive elevated surfaces | `bg-surface-elevated` |
-| `--color-border` | `#1f2432` | Default borders and rings | `border-border`, `ring-border` |
-| `--color-border-bright` | `#2e3547` | Hover borders, separators | `border-border-bright` |
-| `--color-ink` | `#f1f5f9` | Primary text | `text-ink` |
-| `--color-ink-inverse` | `#041a0e` | Text on accent buttons | `text-ink-inverse` |
-| `--color-muted` | `#8892a4` | Secondary text, dates, tags, placeholders | `text-muted` |
-| `--color-accent` | `#00f076` | Primary action, active state, focus ring | `bg-accent`, `text-accent` |
-| `--color-accent-hover` | `#0df27e` | Accent hover state | `bg-accent-hover` |
-| `--color-live` | `#ff2d55` | Live status text/dots on dark surfaces | `text-live`, `bg-live` |
-| `--color-live-badge` | `#c81e44` | Live badge background behind white text | `bg-live-badge` |
+| Token | Value | Role |
+|---|---|---|
+| `--color-pitch` | `#0b0d12` | Page ground, video well |
+| `--color-surface` | `#11151d` | Panels, rails, ticker |
+| `--color-surface-elevated` | `#171c26` | Hover and inactive fields |
+| `--color-border` | `#262b36` | One-pixel seams |
+| `--color-border-bright` | `#3a4150` | Hover seams, scrollbar thumb |
+| `--color-ink` | `#f2f0e9` | Primary text and light plate |
+| `--color-ink-inverse` | `#0b0d12` | Text on light plate and accent |
+| `--color-muted` | `#9aa0a8` | Secondary text; ≥ 4.5:1 on every ground |
+| `--color-accent` | `#f5c518` | Amber signal: clock, focus, primary action |
+| `--color-accent-hover` | `#ffd84a` | Accent hover |
+| `--color-signal` | `#ff3b30` | Live plates, lamps, large display only |
+| `--color-live-badge` | `#c0271f` | White text on red: 5.6:1, used for small stamps |
+| `--color-sky` | `#2b6cff` | Secondary signal accent |
 
-### Contrast commitments (WCAG 2.1 AA, ≥ 4.5:1)
-
-- `--color-muted` `#8892a4` → 5.5–6.4:1 on all dark surfaces; never use the
-  old `#4a5568` (2.5–2.6:1, failing).
-- White on `--color-live-badge` `#c81e44` → 5.6:1; white on `--color-live`
-  `#ff2d55` is only 3.6:1 and is **not** permitted for text.
-- `--color-ink`, `--color-accent`, amber and red status text used in the player
-  all meet AA on the dark surfaces.
+Colour is functional. Small white-on-red text uses `bg-live-badge`, never
+`bg-signal`; bright signal red is reserved for large plates, lamps and rules.
+LIVE, WAITING and ENDED are stated in words, with a form/lamp difference as
+well as hue.
 
 ## Typography
 
-- Font: **Outfit** (loaded from Google Fonts in `index.html`), with `system-ui`
-  fallback. The old Inter-first stack is gone — Inter was never fetched.
-- `--font-sans` is the single font token; `body` inherits it.
-- Text sizes: content-bearing labels (badges, chips, timestamps, locale tags,
-  "Available feeds", "Also live", nav captions) are **≥ 11px**. The prior
-  `text-[10px]` / `text-[9px]` values failed the legibility floor.
-- Type scale in use: 11px labels, `text-xs` (12px) metadata, `text-sm` body,
-  `text-lg`/`text-xl` headings, `text-3xl`–`text-7xl` display titles.
-- Uppercase tracking (`tracking-wider` / `tracking-[0.18em]`) is reserved for
-  status badges and section labels.
+- Both faces are self-hosted as latin `woff2` in `public/fonts` — no external
+  font request, so the installable build works offline.
+- Display: **Barlow Condensed**, tracked tight, uppercase, fixed scale
+  (`text-5xl`–`text-8xl` for headlines, `clamp()` for score-bug team names).
+  Team plates use `leading-[0.82]` and collide at a red VS.
+- Body: **Archivo** at 11–16px. Metadata uses `font-display` with
+  `tracking-[0.16em]`–`tracking-[0.22em]` rather than tiny sans caps.
+- No gradient text, no backdrop halo, no decorative tracking shifts.
 
-## Layout & responsiveness
+## Layout and surfaces
 
-- Content max width `1800px`, with `px-4` → `sm:px-6` → `lg:px-10` gutters.
-- Header is sticky (`h-14` phone/tablet, `lg:h-[72px]`) and holds the logo and
-  search. Category navigation adapts by width:
-  - **Phone (< 640px):** a fixed, labelled bottom tab bar in thumb reach. It is
-    horizontally scrollable with snap, keeps the active tab centred, and clears
-    page content via bottom padding. The header stays a single compact row.
-  - **Tablet (640–1023px):** a labelled 7-column category strip in the header.
-  - **Desktop (≥ 1024px):** the full icon + label category nav in the header.
-  - Categories are always Home, Football, Live Now, Upcoming, Basketball,
-    Baseball, Others; active state uses the accent colour plus an accent bar.
-  - Selecting a category (or the logo) also returns the page to the top.
-- Match grid: 1 → 2 → 3 → 4 → 5 columns (`sm`/`lg`/`xl`/`2xl`), using
-  `content-visibility: auto` for long lists.
-- Touch targets: ≥ 44px for search fields and category buttons; phone tabs are
-  ~52px tall and 64px wide, tablet tabs `min-h-14`.
-- Player: 16:9 video with a sticky info/feed sidebar (`lg:w-[340px]`,
-  `xl:w-[380px]`) that stacks below the video on mobile.
-- Safe-area padding (`viewport-fit=cover`) is applied to the fixed phone nav and
-  to the page's bottom spacing so content clears the home indicator.
+- **Landing** (`/`): full-bleed featured event art with a score bug and two
+  CTAs, a four-cell signal strip, a poster wall of six real API images, three
+  numbered steps, plain-facts FAQ, and a closing CTA.
+- **App** (`/app`): sticky rail with wordmark, search and seven sport tabs;
+  full-bleed featured fixture over real artwork; live ticker; time-ranked
+  fixture board with fixed columns (time, thumbnail, fixture, competition,
+  feeds, status) and a time/status sort control.
+- **Player** (`/watch/:id`): 16:9 well using the event poster behind the play
+  gate, a compact score bug, and a sticky sidebar of stamped feed coupons.
+  The iframe mounts only on play and keeps `allow="fullscreen; picture-in-picture"`.
+- Responsive: phone bottom tab bar and single-column board; tablet seven-tab
+  strip; desktop full rail. Touch targets ≥ 44px. Content max width 1800px.
+- Flat fields with one-pixel seams. No rounded card stacks, no nested cards,
+  no offset shadows, no glass decoration.
 
-## Status & state semantics
+## Imagery provenance
 
-- **Live** — red (`--color-live` text/dot, `--color-live-badge` chip), static dot
-  plus a text label. One authoritative live badge appears in the player info
-  block; feed cards use their own dot + `Live`/`Waiting` label.
-- **Upcoming** — amber, text badge.
-- **Focus** — global `:focus-visible` outline of 2px accent with 2px offset.
-  Search inputs swap to an accent ring instead.
-- **Loading** — single `LoadingSpinner` (Cardio) at a stable 96px, with
-  `role="status"`. The 3× desktop scale and duplicate skeleton are removed.
-- **Empty / error / stale** — icon + short explanation + retry action; stale
-  data is kept behind a banner with an explicit "last updated" time.
-- Copy always preserves the educational purpose and the third-party-source
-  disclaimer (see `PRODUCT.md` / `README.md`). No ownership, "Premium", or
-  "completely free" streaming claims.
+Every event image is loaded from the upstream APIs: PPV poster URLs
+(`static.ppvservices.st`), StreamFree thumbnails (`streamfree.top/thumbnails`)
+and team crests (`a.espncdn.com`) exposed as `APIMatch.crests`. `EventArt`
+walks `api.getPosterCandidates()` on error and ends at
+`/sports_placeholder.png` only when an upstream image fails — artwork is
+never invented or stock-sourced. Captures in `.impeccable/review/` are review
+evidence, not shipping assets.
 
 ## Motion
 
-- Subtle, functional transitions only: color/border/background/box-shadow on
-  interaction, plus small press/hover scales.
-- Decorative pulsing dots and zero-offset neon glows were removed; status is
-  communicated by color + label, not simulated animation.
-- `prefers-reduced-motion: reduce` disables pulse/spin/loader animation and all
-  transforms, keeping color, opacity, shadow and static dots as state feedback.
-  It deliberately avoids a blanket `animation-duration: 0.01ms` so meaningful
-  fades still work.
+One authored moment: the live ticker translates once, continuously, and pauses
+on hover. Reduced motion disables it. All other transitions are colour,
+border and opacity only. Status is never communicated by pulse alone.
+
+## Accessibility
+
+AA contrast on all text, ≥ 11px content labels, ≥ 44px touch targets, visible
+amber focus rings, themed caret, selection, scrollbar and underline offset.
+Real buttons for every row, tab and feed; the featured match has both a visible
+CTA and a keyboard/screen-reader activation button.
 
 ## Conventions
 
-- Prefer theme utilities (`bg-surface`, `text-muted`, `border-border`) over
-  `bg-[#111319]`-style arbitrary values. Add a token to `@theme` first if a new
-  color is needed.
-- Keep accessibility floors: AA contrast, ≥ 11px content text, ≥ 44px touch
-  targets, visible focus, and real controls (no `href="#"` placeholders).
-- No dead assets or scaffold code: only components and files that are actually
-  imported ship in the build.
+Prefer theme utilities over arbitrary hex. Add a token before a new colour.
+Keep the educational disclaimer and the third-party-source boundary in all
+public copy; no ownership, premium or "free stream" claims.

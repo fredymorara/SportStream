@@ -1,18 +1,43 @@
 import React, { useEffect, useMemo } from "react";
+import { Helmet } from "react-helmet-async";
+import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
-import MatchGrid from "../components/MatchGrid";
-import HeroSection from "../components/HeroSection";
+import EventArt from "../components/EventArt";
+import ScoreBug from "../components/ScoreBug";
+import Ticker from "../components/Ticker";
+import FixtureBoard from "../components/FixtureBoard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchMatchesByStatus } from "../store/matchesSlice";
 import type { APIMatch } from "../services/api";
 import { formatEventDate } from "../utils/formatDate";
 
-import { Helmet } from "react-helmet-async";
+const SPORTS = ["football", "basketball", "baseball"];
+const rank = (match: APIMatch) =>
+  match.status === "live" ? 0 : match.status === "upcoming" ? 1 : 2;
+const byProximity = (a: APIMatch, b: APIMatch) =>
+  rank(a) - rank(b) || a.date - b.date;
+
+const titleFor = (sport: string) =>
+  sport === "live"
+    ? "Live now"
+    : sport === "upcoming"
+      ? "Upcoming events"
+      : sport === "other"
+        ? "Other sports"
+        : `${sport.charAt(0).toUpperCase()}${sport.slice(1)} events`;
+
+const subtitleFor = (sport: string) =>
+  sport === "live"
+    ? "Every feed currently on air, nearest kickoff first."
+    : sport === "upcoming"
+      ? "What starts next, ordered by the nearest start time."
+      : `Live and upcoming ${sport === "other" ? "sports" : sport} fixtures in one place.`;
 
 const HomePage: React.FC = () => {
   const dispatch = useAppDispatch();
-
+  const navigate = useNavigate();
+  const location = useLocation();
   const {
     rawMatches,
     loading,
@@ -20,229 +45,83 @@ const HomePage: React.FC = () => {
     lastUpdated,
     selectedSport,
     searchQuery,
-  } =
-    useAppSelector((state) => state.matches);
+  } = useAppSelector((state) => state.matches);
 
   useEffect(() => {
     const refresh = () =>
       dispatch(fetchMatchesByStatus({ status: "all", forceRefresh: true }));
     refresh();
-    const refreshInterval = window.setInterval(refresh, 60_000);
+    const interval = window.setInterval(refresh, 60_000);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") refresh();
     };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
-      window.clearInterval(refreshInterval);
+      window.clearInterval(interval);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [dispatch]);
 
-  // Filter matches within Today & Tomorrow time window + match toolbar flags + search text
   const filteredMatches = useMemo(() => {
-    let filtered = [...rawMatches];
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setDate(end.getDate() + 1);
+    end.setHours(23, 59, 59, 999);
 
-    // Determine Today & Tomorrow boundaries in user local time
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    let list = rawMatches.filter(
+      (match) =>
+        match.status === "live" ||
+        (match.date >= start.getTime() && match.date <= end.getTime()),
+    );
 
-    const endOfTomorrow = new Date();
-    endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
-    endOfTomorrow.setHours(23, 59, 59, 999);
-
-    filtered = filtered.filter((m) => {
-      const isLive = m.status === "live";
-      if (isLive) return true;
-      return (
-        m.date >= startOfToday.getTime() && m.date <= endOfTomorrow.getTime()
+    if (selectedSport === "live") {
+      list = list.filter((match) => match.status === "live");
+    } else if (selectedSport === "upcoming") {
+      list = list.filter((match) => match.status === "upcoming");
+    } else if (SPORTS.includes(selectedSport)) {
+      list = list.filter(
+        (match) => match.category?.toLowerCase() === selectedSport,
       );
-    });
-
-    // Apply Search Query filter
-    if (searchQuery.trim() !== "") {
-      const lowerQuery = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (m) =>
-          m.title.toLowerCase().includes(lowerQuery) ||
-          m.category?.toLowerCase().includes(lowerQuery),
+    } else if (selectedSport === "other") {
+      list = list.filter(
+        (match) => !SPORTS.includes(match.category?.toLowerCase() || ""),
       );
     }
 
-    return filtered;
-  }, [rawMatches, searchQuery]);
-
-  // Categories definitions exactly as requested
-  const categoryDefinitions = useMemo(
-    () => [
-      {
-        id: "live",
-        name: "Live Now",
-        match: (_m: APIMatch, isLive: boolean) => isLive,
-      },
-      {
-        id: "upcoming",
-        name: "Upcoming",
-        match: (m: APIMatch) => m.status === "upcoming",
-      },
-      {
-        id: "football",
-        name: "Football",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "football",
-      },
-      {
-        id: "basketball",
-        name: "Basketball",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "basketball",
-      },
-      {
-        id: "baseball",
-        name: "Baseball",
-        match: (m: APIMatch) => m.category?.toLowerCase() === "baseball",
-      },
-      {
-        id: "other",
-        name: "Others",
-        match: (_m: APIMatch, _isLive: boolean, matchedInCategories: boolean) =>
-          !matchedInCategories,
-      },
-    ],
-    [],
-  );
-
-  const categorizedSections = useMemo(() => {
-    const matchedInCategoriesMatchIds = new Set<string>();
-    const sortByStartTime = (a: APIMatch, b: APIMatch) => a.date - b.date;
-
-    const sportSections = categoryDefinitions
-      .filter(
-        (catDef) => catDef.id !== "other" && catDef.id !== "upcoming",
-      )
-      .map((catDef) => {
-        const matches = filteredMatches.filter((m) => {
-          const isLive = m.status === "live";
-          const isMatch = catDef.match(m, isLive, false);
-          if (isMatch && catDef.id !== "live") {
-            matchedInCategoriesMatchIds.add(m.id);
-          }
-          return isMatch;
-        });
-
-        const live: APIMatch[] = [];
-        const upcoming: APIMatch[] = [];
-
-        matches.forEach((m) => {
-          const isLive = m.status === "live";
-          if (isLive) {
-            live.push(m);
-          } else {
-            upcoming.push(m);
-          }
-        });
-
-        live.sort(sortByStartTime);
-        upcoming.sort(sortByStartTime);
-
-        return {
-          ...catDef,
-          matches: [...live, ...upcoming],
-        };
-      });
-
-    const otherDef = categoryDefinitions.find((c) => c.id === "other");
-    const otherSection = otherDef
-      ? {
-          ...otherDef,
-          matches: filteredMatches.filter((m) => {
-            const hasMatchedSport = matchedInCategoriesMatchIds.has(m.id);
-            return otherDef.match(m, false, hasMatchedSport);
-          }),
-        }
-      : null;
-
-    if (otherSection) {
-      const live: APIMatch[] = [];
-      const upcoming: APIMatch[] = [];
-
-      otherSection.matches.forEach((m) => {
-        const isLive = m.status === "live";
-        if (isLive) {
-          live.push(m);
-        } else {
-          upcoming.push(m);
-        }
-      });
-
-      live.sort(sortByStartTime);
-      upcoming.sort(sortByStartTime);
-      otherSection.matches = [...live, ...upcoming];
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      list = list.filter(
+        (match) =>
+          match.title.toLowerCase().includes(query) ||
+          match.category?.toLowerCase().includes(query) ||
+          match.tag?.toLowerCase().includes(query),
+      );
     }
 
-    const upcomingSection = {
-      id: "upcoming",
-      name: "Upcoming",
-      matches: filteredMatches
-        .filter((match) => match.status === "upcoming")
-        .sort(sortByStartTime),
-    };
-
-    const sections = otherSection
-      ? [...sportSections, otherSection]
-      : sportSections;
-
-    const visibleSections =
-      selectedSport === "upcoming"
-        ? upcomingSection.matches.length > 0
-          ? [upcomingSection]
-          : []
-        : selectedSport !== "all"
-          ? sections.filter((sec) => sec.id === selectedSport)
-          : sections.filter((sec) => sec.matches.length > 0);
-
-    return visibleSections;
-  }, [filteredMatches, categoryDefinitions, selectedSport]);
+    return [...list].sort(byProximity);
+  }, [rawMatches, selectedSport, searchQuery]);
 
   const featuredMatch = useMemo(() => {
-    const isHeroEligible = (match: APIMatch) =>
-      !/red\s*zone/i.test(
-        [match.title, match.uriName, match.tag || ""].join(" "),
-      );
+    const eligible = rawMatches.filter(
+      (match) =>
+        !/red\s*zone/i.test([match.title, match.uriName, match.tag || ""].join(" ")) &&
+        (match.status !== "ended" || match.allowPastStreams),
+    );
+    const football = eligible.filter(
+      (match) => match.category?.trim().toLowerCase() === "football",
+    );
+    const pool = football.length ? football : eligible;
+    return [...pool].sort(byProximity)[0] ?? null;
+  }, [rawMatches]);
 
-    const footballEvents = rawMatches
-      .filter(
-        (match) =>
-          isHeroEligible(match) &&
-          match.category?.trim().toLowerCase() === "football" &&
-          (match.status !== "ended" || match.allowPastStreams),
-      )
-      .sort((a, b) => {
-        const statusPriority = (status: APIMatch["status"]) =>
-          status === "live" ? 0 : status === "upcoming" ? 1 : 2;
-        const priorityDifference =
-          statusPriority(a.status) - statusPriority(b.status);
-        if (priorityDifference !== 0) return priorityDifference;
-        return a.status === "ended" ? b.date - a.date : a.date - b.date;
-      });
-    if (footballEvents.length > 0) return footballEvents[0];
+  const openMatch = (match: APIMatch) =>
+    navigate(`/watch/${encodeURIComponent(match.uriName)}${location.search}`);
 
-    const heroEligibleMatches = filteredMatches.filter(isHeroEligible);
-    const liveAny = heroEligibleMatches.find((m) => {
-      return m.status === "live";
-    });
-    if (liveAny) return liveAny;
-
-    if (heroEligibleMatches.length > 0) return heroEligibleMatches[0];
-    return null;
-  }, [rawMatches, filteredMatches]);
-
-  const otherLiveMatches = useMemo(
-    () =>
-      rawMatches
-        .filter((m) => m.status === "live" && m.id !== featuredMatch?.id)
-        .slice(0, 8),
-    [rawMatches, featuredMatch],
-  );
+  const retry = () =>
+    dispatch(fetchMatchesByStatus({ status: "all", forceRefresh: true }));
 
   if (loading && rawMatches.length === 0) {
     return (
@@ -257,34 +136,18 @@ const HomePage: React.FC = () => {
   if (error && rawMatches.length === 0) {
     return (
       <MainLayout>
-        <div className="mt-8 flex min-h-[40vh] flex-col items-center justify-center border-t border-border/50 py-16 text-center">
-          <div className="bg-red-500/10 p-4 rounded-full mb-4">
-            <svg
-              className="w-8 h-8 text-red-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-          <p className="text-white text-lg font-bold mb-2">
-            Failed to load content
+        <div className="mt-8 flex min-h-[40vh] flex-col items-center justify-center gap-4 border-t border-border py-16 text-center">
+          <span className="sig-stamp bg-live-badge px-3 py-1 text-sm text-white">
+            Signal lost
+          </span>
+          <p className="font-display text-3xl font-extrabold uppercase text-ink">
+            Couldn’t load the fixture feed
           </p>
-          <p className="text-muted text-sm">{error}</p>
+          <p className="max-w-md text-sm text-muted">{error}</p>
           <button
             type="button"
-            onClick={() =>
-              dispatch(
-                fetchMatchesByStatus({ status: "all", forceRefresh: true }),
-              )
-            }
-            className="mt-6 rounded-md bg-accent px-5 py-2.5 text-sm font-bold text-black transition hover:bg-accent-hover"
+            onClick={retry}
+            className="sig-stamp mt-2 bg-accent px-6 py-3 text-sm text-ink-inverse hover:bg-accent-hover"
           >
             Try again
           </button>
@@ -295,40 +158,26 @@ const HomePage: React.FC = () => {
 
   return (
     <MainLayout>
+      {selectedSport === "all" && (
+        <h1 className="sr-only">Live sports fixtures</h1>
+      )}
       <Helmet>
-        <title>SportStream | Discover Live Sports Events</title>
+        <title>SportStream | Live fixtures, on air</title>
         <meta
           name="description"
-          content="An educational project for discovering live and upcoming sports events from third-party sources. SportStream does not host or provide streams."
-        />
-        <meta
-          property="og:title"
-          content="SportStream | Discover Live Sports Events"
-        />
-        <meta
-          property="og:description"
-          content="An educational project for discovering live and upcoming sports events from third-party sources."
+          content="An educational project for discovering live and upcoming sports fixtures from third-party sources. SportStream does not host or provide streams."
         />
         <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta
-          name="twitter:title"
-          content="SportStream | Discover Live Sports Events"
-        />
-        <meta
-          name="twitter:description"
-          content="An educational project for discovering live sports events from third-party sources."
-        />
       </Helmet>
 
       {error && rawMatches.length > 0 && (
         <div
           role="status"
-          className="mb-8 flex flex-col gap-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-4 py-3 text-sm text-amber-100 sm:flex-row sm:items-center sm:justify-between"
+          className="mb-6 flex flex-col gap-3 border border-accent/40 bg-surface px-4 py-3 text-sm text-ink sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <p className="font-semibold">Showing the last available events.</p>
-            <p className="mt-1 text-xs text-amber-100/70">
+            <p className="font-semibold">Showing the last available fixtures.</p>
+            <p className="mt-1 text-xs text-muted">
               {lastUpdated
                 ? `Last updated ${formatEventDate(lastUpdated, {
                     hour: "2-digit",
@@ -340,92 +189,111 @@ const HomePage: React.FC = () => {
           </div>
           <button
             type="button"
-            onClick={() =>
-              dispatch(
-                fetchMatchesByStatus({ status: "all", forceRefresh: true }),
-              )
-            }
-            className="w-fit rounded-md border border-amber-200/30 px-4 py-2 text-xs font-bold text-amber-50 transition hover:bg-amber-100/10"
+            onClick={retry}
+            className="sig-stamp w-fit border border-accent px-4 py-2 text-xs text-accent"
           >
-            Try again
+            Retry
           </button>
         </div>
       )}
 
-      {selectedSport === "all" ? (
-        <HeroSection featuredMatch={featuredMatch} otherLive={otherLiveMatches} />
+      {selectedSport === "all" && featuredMatch ? (
+        <section className="mb-6" aria-label="Featured fixture">
+          <div className="relative min-h-[clamp(360px,44vw,540px)] overflow-hidden border border-border">
+            <div className="absolute inset-0">
+              <EventArt match={featuredMatch} eager className="h-full w-full" imgClassName="scale-[1.02]">
+                <div className="absolute inset-0 bg-gradient-to-r from-pitch via-pitch/85 to-pitch/25" />
+                <div className="absolute inset-0 bg-gradient-to-t from-pitch via-transparent to-transparent" />
+              </EventArt>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => openMatch(featuredMatch)}
+              aria-label={`Watch ${featuredMatch.title}`}
+              className="sr-only focus:not-sr-only focus:absolute focus:inset-0 focus:z-30 focus:flex focus:items-center focus:justify-center focus:bg-pitch/70 focus:text-ink"
+            >
+              Watch {featuredMatch.title}
+            </button>
+
+            <div className="relative z-10 flex min-h-[clamp(360px,44vw,540px)] flex-col justify-between p-5 sm:p-8 lg:p-10">
+              <div className="flex items-center gap-3">
+                <span className="font-display text-xs font-bold uppercase tracking-[0.22em] text-accent">
+                  Featured fixture
+                </span>
+                <span className="h-px flex-1 bg-border-bright" />
+                <span className="font-display text-xs font-semibold uppercase tracking-[0.18em] text-muted">
+                  {featuredMatch.category}
+                </span>
+              </div>
+
+              <div className="max-w-3xl">
+                <ScoreBug match={featuredMatch} />
+                <div className="mt-6 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => openMatch(featuredMatch)}
+                    className="sig-stamp bg-live-badge px-7 py-3 text-sm text-white hover:bg-signal"
+                  >
+                    Watch Now
+                  </button>
+                  <span className="font-display text-sm font-semibold uppercase tracking-wider text-muted">
+                    {featuredMatch.streamLinks.length} available feeds
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       ) : (
-        <section className="mb-10 border-b border-border pb-8">
-          <div className="flex items-end justify-between gap-4">
+        <section className="mb-6 border-b-2 border-ink pb-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="max-w-[14ch] text-balance text-5xl font-black leading-[0.95] tracking-[-0.04em] text-white sm:text-6xl lg:text-7xl">
-                {selectedSport === "live"
-                  ? "Live now"
-                  : selectedSport === "upcoming"
-                    ? "Upcoming events"
-                  : selectedSport === "other"
-                    ? "Other sports"
-                    : `${selectedSport.charAt(0).toUpperCase()}${selectedSport.slice(1)} events`}
+              <h1 className="max-w-[16ch] font-display text-5xl font-extrabold uppercase leading-[0.88] tracking-tight text-ink sm:text-6xl lg:text-7xl">
+                {titleFor(selectedSport)}
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-muted">
-                {selectedSport === "live"
-                  ? "Follow every event currently in progress."
-                  : selectedSport === "upcoming"
-                    ? "See what is starting next, ordered by the nearest start time."
-                  : `Browse live and upcoming ${selectedSport === "other" ? "sports" : selectedSport} events in one place.`}
+              <p className="mt-3 max-w-xl text-sm text-muted">
+                {subtitleFor(selectedSport)}
               </p>
             </div>
-            <span className="hidden shrink-0 text-sm font-medium text-muted sm:block">
-              {categorizedSections.reduce(
-                (total, section) => total + section.matches.length,
-                0,
-              )}{" "}
-              events
+            <span className="font-display text-sm font-semibold uppercase tracking-[0.16em] text-muted">
+              {filteredMatches.length} fixtures
             </span>
           </div>
         </section>
       )}
 
-      {categorizedSections.length > 0 ? (
-        <div className="space-y-4">
-          {categorizedSections.map((section) => (
-            <MatchGrid key={section.id} section={section} />
-          ))}
+      {selectedSport === "all" && (
+        <div className="mb-8">
+          <Ticker matches={rawMatches} onSelect={openMatch} />
         </div>
+      )}
+
+      {filteredMatches.length > 0 ? (
+        <FixtureBoard
+          title={selectedSport === "all" ? "All fixtures" : "Fixtures"}
+          matches={filteredMatches}
+          onSelect={openMatch}
+        />
       ) : (
-        <div className="text-center py-24 flex flex-col items-center justify-center min-h-[40vh] border-t border-border/50 mt-8">
-          <div className="mb-4 bg-surface p-4 rounded-full">
-            <svg
-              className="w-8 h-8 text-muted"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-          <p className="text-white font-semibold text-xl mb-2">
-            {selectedSport === "all"
-              ? "No matches found"
-              : `No ${selectedSport === "other" ? "other sports" : selectedSport} events right now`}
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 border-t border-border py-16 text-center">
+          <span className="sig-stamp bg-surface px-3 py-1 text-xs text-muted">
+            No signal
+          </span>
+          <p className="font-display text-3xl font-extrabold uppercase text-ink">
+            Nothing on this board
           </p>
-          <p className="text-muted text-sm">
-            Try adjusting your search criteria or checking back later.
+          <p className="max-w-sm text-sm text-muted">
+            Try another sport, clear the search, or check back closer to kickoff.
           </p>
         </div>
       )}
 
-      {/* Footer */}
-      <footer className="mt-20 pt-8 pb-12 border-t border-border/50 flex flex-col md:flex-row items-center justify-between text-muted text-sm gap-4">
+      <footer className="mt-16 flex flex-col gap-2 border-t border-border pt-6 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
         <p>© {new Date().getFullYear()} SportStream. Educational project.</p>
-        <p className="text-center text-pretty md:text-right">
-          Events and streams are provided by third-party sources. SportStream
-          does not host or provide streams.
+        <p>
+          Events and streams are provided by third-party sources. SportStream does
+          not host or provide streams.
         </p>
       </footer>
     </MainLayout>

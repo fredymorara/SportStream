@@ -62,6 +62,11 @@ interface StreamFreeSource {
   live?: boolean;
 }
 
+interface StreamFreeTeam {
+  name?: string;
+  logo?: string;
+}
+
 interface StreamFreeEvent {
   name: string;
   category: string;
@@ -72,6 +77,8 @@ interface StreamFreeEvent {
   additional_sources?: StreamFreeSource[];
   thumbnail_url?: string;
   viewers?: number;
+  team1?: StreamFreeTeam;
+  team2?: StreamFreeTeam;
 }
 
 interface StreamFreeResponse {
@@ -92,6 +99,7 @@ export interface APIMatch {
   endsAt: number;
   poster?: string;
   posterFallbacks?: string[];
+  crests?: string[];
   status: "live" | "upcoming" | "ended";
   uriName: string;
   tag?: string;
@@ -338,6 +346,9 @@ const toStreamFreeMatch = (
     date,
     endsAt: date,
     poster: stream.thumbnail_url,
+    crests: [stream.team1?.logo, stream.team2?.logo].filter(
+      (logo): logo is string => Boolean(logo),
+    ),
     status: hasLiveLink ? "live" : date > Date.now() ? "upcoming" : "ended",
     uriName: `streamfree-${stream.stream_key}`,
     tag: stream.league || "",
@@ -510,6 +521,7 @@ const mergeProviderMatches = (
       ...ppvMatch,
       poster,
       posterFallbacks: [...new Set(posterFallbacks)],
+      crests: ppvMatch.crests?.length ? ppvMatch.crests : duplicate.crests,
       status,
       streamLinks: [...ppvMatch.streamLinks, ...duplicate.streamLinks],
       provider: "combined" as const,

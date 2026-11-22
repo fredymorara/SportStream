@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Outfit", system-ui, sans-serif;
+/* Self-hosted latin faces — the app is installable and must work offline. */
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("/fonts/archivo-latin.woff2") format("woff2");
+}
 
-  /* Surfaces */
-  --color-pitch: #08090c;
-  --color-surface: #111319;
-  --color-surface-elevated: #171a23;
-  --color-border: #1f2432;
-  --color-border-bright: #2e3547;
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/barlow-condensed-500-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/barlow-condensed-600-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/barlow-condensed-700-latin.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/barlow-condensed-800-latin.woff2") format("woff2");
+}
+
+@theme {
+  --font-sans: "Archivo", system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+
+  /* Broadcast ground and flat signal fields */
+  --color-pitch: #0b0d12;
+  --color-surface: #11151d;
+  --color-surface-elevated: #171c26;
+  --color-border: #262b36;
+  --color-border-bright: #3a4150;
 
   /* Foreground */
-  --color-ink: #f1f5f9;
-  --color-ink-inverse: #041a0e;
-  --color-muted: #8892a4;
+  --color-ink: #f2f0e9;
+  --color-ink-inverse: #0b0d12;
+  --color-muted: #9aa0a8;
 
-  /* Brand + status. Live text passes AA on dark (5.1:1); the badge
-     background is darkened so white label text passes AA (5.6:1). */
-  --color-accent: #00f076;
-  --color-accent-hover: #0df27e;
-  --color-live: #ff2d55;
-  --color-live-badge: #c81e44;
+  /* Signal palette — colour carries state, never decoration */
+  --color-accent: #f5c518;
+  --color-accent-hover: #ffd84a;
+  --color-signal: #ff3b30;
+  --color-live: #ff3b30;
+  --color-live-badge: #c0271f;
+  --color-sky: #2b6cff;
 }
 
 :root {
@@ -41,13 +84,9 @@ body {
   min-height: 100vh;
   background-color: var(--color-pitch);
   color: var(--color-ink);
+  caret-color: var(--color-accent);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-::selection {
-  color: var(--color-ink-inverse);
-  background: var(--color-accent);
 }
 
 button,
@@ -55,22 +94,25 @@ input {
   font: inherit;
 }
 
-/* Tactile feedback on all interactive controls */
-button,
-[role="button"],
-a {
-  transition: transform 0.12s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+::selection {
+  color: var(--color-ink-inverse);
+  background: var(--color-accent);
 }
 
-button:active,
-[role="button"]:active {
-  transform: scale(0.98);
+a {
+  text-decoration-color: var(--color-border-bright);
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  text-decoration-color: var(--color-accent);
 }
 
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
-[role="button"]:focus-visible {
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
@@ -78,10 +120,71 @@ input:focus-visible,
 .search-input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
 }
 
-.match-grid-section {
+/* The one authored moment: a live ticker that never starts on every section. */
+@keyframes ticker-run {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-mask {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 3rem,
+    #000 calc(100% - 3rem),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 3rem,
+    #000 calc(100% - 3rem),
+    transparent
+  );
+}
+
+.ticker-track {
+  animation: ticker-run 38s linear infinite;
+}
+
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Status lamps — state is carried by label and form as well as hue. */
+.sig-lamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sig-lamp__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.sig-stamp {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.match-grid-section,
+.fixture-board {
   content-visibility: auto;
   contain-intrinsic-size: 0 520px;
 }
@@ -90,16 +193,15 @@ input:focus-visible,
   padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
 }
 
-/* Hide scrollbars but keep functionality */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 
-/* Solid precision scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -110,30 +212,27 @@ input:focus-visible,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
   background: var(--color-border-bright);
 }
 
-/*
- * Reduced motion: stop decorative animation and movement, but keep every
- * state change communicated through color, opacity, shadow or static dots.
- * A blanket `animation-duration: 0.01ms` would also kill meaningful fades.
- */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse,
+  .ticker-track {
+    animation: none;
+  }
+
   .animate-spin,
   .loading-spinner * {
     animation: none !important;
   }
 
   button,
-  [role="button"],
   a {
-    transition-property: background-color, border-color, color, box-shadow, opacity !important;
+    transition-property: background-color, border-color, color, box-shadow,
+      opacity !important;
   }
 
   button:active,

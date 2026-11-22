@@ -48,7 +48,7 @@ const renderHome = () => {
   return render(
     <HelmetProvider>
       <Provider store={store}>
-        <MemoryRouter initialEntries={["/"]}>
+        <MemoryRouter initialEntries={["/app"]}>
           <HomePage />
           <LocationProbe />
         </MemoryRouter>
@@ -78,7 +78,7 @@ describe("HomePage navigation and filtering", () => {
     const cards = screen.getAllByRole("button", { name: /Watch / });
     expect(cards).toHaveLength(1);
     expect(cards[0]).toHaveTextContent("Football");
-    expect(screen.getByTestId("location")).toHaveTextContent("/?sport=football");
+    expect(screen.getByTestId("location")).toHaveTextContent("/app?sport=football");
   });
 
   it("resets the category and query when Home/logo is clicked", async () => {
@@ -94,7 +94,7 @@ describe("HomePage navigation and filtering", () => {
         screen.getAllByRole("button", { name: "Watch North FC vs South FC" })[0],
       ).toBeVisible(),
     );
-    expect(screen.getByTestId("location")).toHaveTextContent("/");
+    expect(screen.getByTestId("location")).toHaveTextContent("/app");
     expect(screen.getByRole("button", { name: "Watch Now" })).toBeVisible();
   });
 
