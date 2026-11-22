@@ -59,7 +59,7 @@ interface StreamsResponse extends ApiResponse {
 interface StreamFreeSource {
   quality: string;
   url: string;
-  live: boolean;
+  live?: boolean;
 }
 
 interface StreamFreeEvent {
@@ -68,13 +68,20 @@ interface StreamFreeEvent {
   league?: string;
   stream_key: string;
   match_timestamp: number;
-  sources: StreamFreeSource[];
+  iframe?: string;
+  additional_sources?: StreamFreeSource[];
   thumbnail_url?: string;
+  viewers?: number;
 }
 
 interface StreamFreeResponse {
   count?: number;
   streams: StreamFreeEvent[];
+}
+
+interface StreamFreeSourcesResponse {
+  stream_key: string;
+  sources: StreamFreeSource[];
 }
 
 export interface APIMatch {
@@ -223,10 +230,90 @@ let cachedStreamFreeMatches: APIMatch[] | null = null;
 let streamFreeCacheExpiresAt = 0;
 let streamFreeMatchesPromise: Promise<APIMatch[]> | null = null;
 
-const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
+const STREAMFREE_SOURCE_CONCURRENCY = 8;
+
+const qualityFromUrl = (url: string) => {
+  const variant = url
+    .match(/(2160p|1080p|720p|480p|4k)\d*$/i)?.[1]
+    .toLowerCase();
+  if (!variant) return "Stream";
+  if (variant === "4k" || variant === "2160p") return "4K";
+  if (variant === "1080p") return "FHD";
+  if (variant === "720p") return "HD";
+  return "SD";
+};
+
+const mapWithConcurrency = async <T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> => {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(limit, items.length) },
+      async () => {
+        while (nextIndex < items.length) {
+          const index = nextIndex++;
+          results[index] = await mapper(items[index]);
+        }
+      },
+    ),
+  );
+
+  return results;
+};
+
+const fetchStreamFreeSources = async (
+  stream: StreamFreeEvent,
+): Promise<StreamFreeSource[]> => {
+  try {
+    const response = await fetchJson<StreamFreeSourcesResponse>(
+      `${STREAMFREE_API_URL}/sources/${encodeURIComponent(stream.stream_key)}`,
+    );
+    return Array.isArray(response.sources) ? response.sources : [];
+  } catch {
+    // The stream list still carries the main embed URL, so degrade gracefully.
+    return [];
+  }
+};
+
+const toStreamFreeMatch = (
+  stream: StreamFreeEvent,
+  liveSources: StreamFreeSource[] = [],
+): APIMatch => {
   const date = Number(stream.match_timestamp) * 1000 || Date.now();
-  const sources = stream.sources || [];
-  const anyLive = sources.some((s) => s.live);
+  const additionalSources = stream.additional_sources || [];
+  const anyLive = liveSources.some((source) => source.live);
+
+  const candidates: StreamFreeSource[] = [
+    ...liveSources,
+    ...(stream.iframe
+      ? [
+          {
+            quality:
+              liveSources.find((source) => source.url === stream.iframe)
+                ?.quality || qualityFromUrl(stream.iframe),
+            url: stream.iframe,
+            live:
+              liveSources.find((source) => source.url === stream.iframe)?.live ??
+              (anyLive || additionalSources.some((source) => source.live)),
+          },
+        ]
+      : []),
+    ...additionalSources,
+  ];
+
+  const sources: StreamFreeSource[] = [];
+  const seenUrls = new Set<string>();
+  for (const source of candidates) {
+    if (!source?.url || seenUrls.has(source.url)) continue;
+    seenUrls.add(source.url);
+    sources.push(source);
+  }
+
   const streamLinks = sources.map((source, index) => {
     const qualityLabel = source.quality || "Stream";
     const sourceLabel = index === 0 ? "Source 1" : `Source ${index + 1}`;
@@ -235,10 +322,12 @@ const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
       label: `${sourceLabel} · ${qualityLabel}`,
       uriName: `streamfree-${stream.stream_key}`,
       iframe: source.url,
-      isLive: source.live,
+      isLive: Boolean(source.live),
       provider: "streamfree" as const,
     };
   });
+
+  const hasLiveLink = streamLinks.some((link) => link.isLive);
   const category =
     stream.category.toLowerCase() === "soccer" ? "football" : stream.category;
 
@@ -249,8 +338,7 @@ const toStreamFreeMatch = (stream: StreamFreeEvent): APIMatch => {
     date,
     endsAt: date,
     poster: stream.thumbnail_url,
-    status:
-      anyLive ? "live" : date > Date.now() ? "upcoming" : "ended",
+    status: hasLiveLink ? "live" : date > Date.now() ? "upcoming" : "ended",
     uriName: `streamfree-${stream.stream_key}`,
     tag: stream.league || "",
     alwaysLive: false,
@@ -277,11 +365,18 @@ const getStreamFreeMatches = async (
   streamFreeMatchesPromise = fetchJson<StreamFreeResponse>(
     `${STREAMFREE_API_URL}/streams${forceRefresh ? `?_refresh=${Date.now()}` : ""}`,
   )
-    .then((response) => {
+    .then(async (response) => {
       if (!Array.isArray(response.streams)) {
         throw new Error("StreamFree returned an invalid streams response.");
       }
-      cachedStreamFreeMatches = response.streams.map(toStreamFreeMatch);
+      const liveSourcesByKey = await mapWithConcurrency(
+        response.streams,
+        STREAMFREE_SOURCE_CONCURRENCY,
+        fetchStreamFreeSources,
+      );
+      cachedStreamFreeMatches = response.streams.map((stream, index) =>
+        toStreamFreeMatch(stream, liveSourcesByKey[index]),
+      );
       streamFreeCacheExpiresAt = Date.now() + CACHE_DURATION_MS;
       return cachedStreamFreeMatches;
     })
